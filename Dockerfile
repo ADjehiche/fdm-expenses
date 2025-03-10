@@ -12,10 +12,10 @@ RUN apt-get update && apt-get install nginx -y
 
 # copy files to nginx website location
 COPY . /var/www/
-RUN ls /var/www
 
 # copy nginx config to nginx site directory
-COPY expenses /etc/nginx/sites-enabled/default
+COPY nginxServerConfig /etc/nginx/sites-enabled/default
+
 
 # open port 80 for tcp
 EXPOSE 80/tcp
