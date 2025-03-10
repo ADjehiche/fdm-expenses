@@ -9,7 +9,7 @@
  
  	server_name _; 
  
- 	root /var/www/expenses/html;
+ 	root /var/www/html;
  	index index-test.html;
  
  	location / {

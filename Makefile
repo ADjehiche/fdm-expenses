@@ -3,11 +3,7 @@ run:
 
 prune:
 	sudo docker system prune
-	sudo nginx -s quit
+	# sudo nginx -s quit
 
 build:
 	sudo docker build . -f Dockerfile -t expenses
-
-
-restart:
-	sudo service nginx restart
