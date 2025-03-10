@@ -1,8 +1,7 @@
 # expense-tracker
 
-
 ## Docker
-To use docker, first you must install docker. 
+To use docker, first you must [install docker](https://docs.docker.com/engine/install/)
 
 Since this project is using docker in ubuntu, I would recommend using it after configuring WSL on Windows
 
@@ -23,6 +22,6 @@ and then
 make run
 ```
 
-And that will run it locally at localhost. 
+And that will run it locally at localhost ([here](127.0.0.1:80))
 
 To stop it from running, run `make kill` in the repository directory. 
