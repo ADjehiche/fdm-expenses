@@ -23,9 +23,5 @@ EXPOSE 80/tcp
 # will run the web server when this command runs
 RUN service nginx restart
 
-
-
-CMD ["nginx", "-g", "daemon off;"]
-# CMD ["/usr/sbin/nginx", "-g", "daemon off;"]
-
+CMD ["/usr/sbin/nginx", "-g", "daemon off;"]
 
