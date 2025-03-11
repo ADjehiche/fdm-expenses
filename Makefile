@@ -1,5 +1,5 @@
 run:
-	sudo docker container run --name expense_app -d -p  80:80 
+	sudo docker run --name expense_app -d -p  80:80 expenses 
 
 prune:
 	sudo docker system prune
@@ -9,4 +9,5 @@ build:
 	sudo docker build . -f Dockerfile -t expenses
 
 kill:
+	docker rm expense_app
 	docker kill expense_app

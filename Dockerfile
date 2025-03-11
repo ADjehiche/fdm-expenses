@@ -3,6 +3,9 @@
 # setup to use Ubuntu
 FROM ubuntu:20.04
 
+
+RUN echo "hello world2"
+
 # install dependencies
 RUN apt-get update && apt-get install nginx -y
 
@@ -22,6 +25,7 @@ RUN service nginx restart
 
 
 
-CMD ["/usr/sbin/nginx", "-g", "daemon off;"]
+CMD ["nginx", "-g", "daemon off;"]
+# CMD ["/usr/sbin/nginx", "-g", "daemon off;"]
 
 
