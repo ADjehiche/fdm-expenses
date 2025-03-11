@@ -22,6 +22,6 @@ and then
 make run
 ```
 
-And that will run it locally at localhost ([here](127.0.0.1:80))
+And that will run it locally at [localhost](127.0.0.1:80)
 
 To stop it from running, run `make kill` in the repository directory. 
