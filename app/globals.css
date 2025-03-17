@@ -29,7 +29,14 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-
 .logo path {
   fill: var(--foreground)
+}
+
+.btn {
+  @apply font-bold py-0 px-4 rounded border;
+}
+
+.lnk {
+  @apply hover:underline
 }

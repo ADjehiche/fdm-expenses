@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,37 +29,37 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <header>
-          <section className="grid grid-cols-2 grid-gap-1 content-center">
-            <a
-              id="site-logo"
-              href="."
-              title="fdm logo"
-              className="items-center"
+        <header className="row-start-2 flex gap-[24px] flex-wrap items-stretch justify-between p-4">
+          <a
+            id="site-logo"
+            href="."
+            title="fdm logo"
+            className="items-center px-5 flex-none"
+          >
+            <svg
+              fill="none"
+              height="28"
+              viewBox="0 0 88 28"
+              width="88"
+              xmlns="http://www.w3.org/2000/svg"
+              className="logo"
             >
-              <svg
-                fill="none"
-                height="28"
-                viewBox="0 0 88 28"
-                width="88"
-                xmlns="http://www.w3.org/2000/svg"
-                className="logo"
-              >
-                <path
-                  d="m42.7015 8.77008h-21.3986v19.10132h21.3986c2.9673 0 5.3754-2.4081 5.3754-5.3755v-8.3503c0-2.9674-2.4056-5.37552-5.3754-5.37552zm-2.5643 14.71832c0 1.3703-1.1109 2.4812-2.4812 2.4812h-8.4159v-15.2977h8.4159c1.3703 0 2.4812 1.1109 2.4812 2.4812zm-37.65602-14.71832h15.51682v1.90182h-9.64763c-.22923 0-.41312.1839-.41312.4131v5.9523h10.06075v1.9018h-10.05823v8.9298h-7.93977v-16.6176c0-1.37035 1.11086-2.48122 2.48118-2.48122zm77.28932-5.02785c2.6172-.97484 5.3856-2.17134 8.2295-3.61723v27.7464h-7.9373v-20.68071l-6.1916 11.41341v9.2648h-7.9397v-17.0408l-6.1917 11.4134v5.6299h-7.9397v-16.6227c0-1.34256 1.068-2.43831 2.4106-2.47862 1.859-.05541 3.7029-.20907 5.5291-.39044v9.87186l5.7811-10.65525c2.7154-.46601 5.5241-1.10331 8.3503-1.9119v8.93225l5.902-10.87437z"
-                />
-              </svg>
-            </a>
+              <path d="m42.7015 8.77008h-21.3986v19.10132h21.3986c2.9673 0 5.3754-2.4081 5.3754-5.3755v-8.3503c0-2.9674-2.4056-5.37552-5.3754-5.37552zm-2.5643 14.71832c0 1.3703-1.1109 2.4812-2.4812 2.4812h-8.4159v-15.2977h8.4159c1.3703 0 2.4812 1.1109 2.4812 2.4812zm-37.65602-14.71832h15.51682v1.90182h-9.64763c-.22923 0-.41312.1839-.41312.4131v5.9523h10.06075v1.9018h-10.05823v8.9298h-7.93977v-16.6176c0-1.37035 1.11086-2.48122 2.48118-2.48122zm77.28932-5.02785c2.6172-.97484 5.3856-2.17134 8.2295-3.61723v27.7464h-7.9373v-20.68071l-6.1916 11.41341v9.2648h-7.9397v-17.0408l-6.1917 11.4134v5.6299h-7.9397v-16.6227c0-1.34256 1.068-2.43831 2.4106-2.47862 1.859-.05541 3.7029-.20907 5.5291-.39044v9.87186l5.7811-10.65525c2.7154-.46601 5.5241-1.10331 8.3503-1.9119v8.93225l5.902-10.87437z" />
+            </svg>
+          </a>
 
-            <ul className="bg-[--background]">
-              <li className="border border-amber-950">Link 1</li>
-              <li className="border border-amber-950">Link 1</li>
-              <li className="border border-amber-950">Link 1</li>
+          <nav>
+            <ul className="flex flex-wrap flex-row justify-center text-center">
+              <li className="border w-30">
+                <Link href="https://www.fdmgroup.com/" className="lnk">
+                  FDM Group
+                </Link>
+              </li>
             </ul>
-          </section>
+          </nav>
         </header>
         <main>{children} </main>
-        <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center"></footer>
+        <footer className=""></footer>
       </body>
     </html>
   );
