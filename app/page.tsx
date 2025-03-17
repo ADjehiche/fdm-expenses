@@ -21,10 +21,8 @@ export default function Home() {
             <input name="pass" className="border" />
 
             {/* submit button */}
-            <br />
-            <button type="submit">Submit</button>
-
             <a href="/sign-up">Register</a>
+            <br />
             <button type="submit">Login</button>
           </Form>
         </section>
