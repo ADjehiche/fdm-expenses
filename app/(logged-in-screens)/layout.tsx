@@ -27,6 +27,7 @@ export default function RootLayout({
       <section className="border flex flex-2">
         <aside className="w-80 py-2 border">
           <p>Aside</p>
+          {/* TODO: Make which of these links show up based on what kind of user is present */}
           <ol>
             <li>
               <a href="./claim">Make Claim</a>
