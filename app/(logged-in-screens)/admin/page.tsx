@@ -9,9 +9,7 @@ import Form from "next/form";
 export default async function Home() {
   return (
     <div className="">
-      <div className="">
-        <p>Hi firends</p>
-      </div>
+      <p>Hi firends, I will create new users and manage them. </p>
     </div>
   );
 }

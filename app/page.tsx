@@ -5,7 +5,6 @@ import { login } from "@/actions/login";
 
 export default function Home() {
   return (
-    <main className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 ">
       <div className="bg-[--background] text-[[--foreground]] text-center py-4">
         <section className="m-auto w-50">
           <Form action={login} className="border">
@@ -27,6 +26,5 @@ export default function Home() {
           </Form>
         </section>
       </div>
-    </main>
   );
 }
