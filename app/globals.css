@@ -17,6 +17,10 @@
     --background: #0a0a0a;
     --foreground: #c5ff00;
   }
+
+  .logo path {
+    fill: var(--foreground)
+  }
 }
 
 body {
