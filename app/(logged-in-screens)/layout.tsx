@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
+
 import "@/app/globals.css";
 
 const geistSans = Geist({
@@ -23,32 +25,39 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <section>
-      <section className="border flex flex-2">
-        <aside className="w-80 py-2 border">
-          <p>Aside</p>
-          {/* TODO: Make which of these links show up based on what kind of user is present */}
-          <ol>
-            <li>
-              <a href="./claim">Make Claim</a>
-            </li>
-            <li>
-              <a href="./claim-status">Claim Status</a>
-            </li>
-            <li>
-              <a href="./manage">Manage Claims</a>
-            </li>
-            <li>
-              <a href="./reimburse">Reimburse Claims</a>
-            </li>
-            <li>
-              <a href="./admin">Manage Users</a>
-            </li>
-          </ol>
-        </aside>
-        <section>
-          <main>{children} </main>
-        </section>
+    <section className="border flex flex-2">
+      <aside className="w-80 py-2 border">
+        {/* TODO: Make which of these links show up based on what kind of user is present */}
+        <ol>
+          <li>
+            <Link href="./claim" className="lnk">
+              Make Claim
+            </Link>
+          </li>
+          <li>
+            <Link href="./claim-status" className="lnk">
+              Claim Status
+            </Link>
+          </li>
+          <li>
+            <Link href="./manage" className="lnk">
+              Manage Claims
+            </Link>
+          </li>
+          <li>
+            <Link href="./reimburse" className="lnk">
+              Reimburse Claims
+            </Link>
+          </li>
+          <li>
+            <Link href="./admin" className="lnk">
+              Manage Users
+            </Link>
+          </li>
+        </ol>
+      </aside>
+      <section>
+        <main>{children} </main>
       </section>
     </section>
   );

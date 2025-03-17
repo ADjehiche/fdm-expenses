@@ -1,10 +1,4 @@
-'use server'
-
-import Image from "next/image";
-import Form from "next/form";
-
-
-
+"use server";
 
 export default async function Home() {
   return (
