@@ -17,7 +17,7 @@ nginxServerConfig
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
+.idea
 # testing
 /coverage
 
