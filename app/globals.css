@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --background: #c5ff00;
   --foreground: #171717;
@@ -19,7 +23,7 @@
   }
 
   .logo path {
-    fill: var(--foreground)
+    fill: var(--foreground);
   }
 }
 
@@ -30,7 +34,7 @@ body {
 }
 
 .logo path {
-  fill: var(--foreground)
+  fill: var(--foreground);
 }
 
 .btn {
@@ -38,5 +42,5 @@ body {
 }
 
 .lnk {
-  @apply hover:underline
+  @apply hover:underline;
 }
