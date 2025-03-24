@@ -45,8 +45,15 @@ export default function Home() {
           </Button>
         </div>
 
-        <div className="fdm-background-image relative">
-          <section className=" text-white flex flex-row justify-center items-center min-h-screen">
+        <div className="relative min-h-screen flex justify-center items-center">
+          <Image
+            src="/fdm-background.jpg"
+            alt="Background"
+            layout="fill"
+            objectFit="cover"
+            className="blur-md"
+          />
+          <section className="text-white flex flex-col justify-center items-center z-10">
             <div className="container mx-auto mb-40 px-4 text-center">
               <h1 className="text-4xl md:text-6xl font-bold mb-6 font-sans">
                 <em className="text-[#c3fa04]">Seamless </em>
