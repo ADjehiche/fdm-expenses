@@ -76,7 +76,8 @@ export default function LoginPage() {
                 Login to your Account
               </h1>
               <p className="text-gray-600 mt-2">
-                Enter your credentials to access FDMExpense
+                Enter your credentials to access{" "}
+                <em className="font-bold text-[#c3fa04]">FDMExpenses</em>
               </p>
             </div>
 
@@ -140,7 +141,7 @@ export default function LoginPage() {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full bg-[#c3fa04] hover:bg-[#c3fa04]/90 hover:cursor-pointer"
+                  className="w-full bg-[#c3fa04] hover:bg-[#c3fa04]/90 hover:cursor-pointer hover:scale-[1.02] transition-[0.2s]"
                   disabled={isPending}
                 >
                   {isPending ? "Logging in..." : "Login"}
