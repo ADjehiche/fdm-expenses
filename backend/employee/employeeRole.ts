@@ -1,14 +1,23 @@
 import { Claim, ClaimStatus } from "../claims/claim";
-import { LineManager } from "./lineManager";
+import { User } from "../user";
+
+export enum EmployeeType {
+    LineManager = "Line Manager",
+    PayrollOfficer = "Payroll Officer",
+    Administrator = "Administrator",
+    GeneralStaff = "General Staff",
+    Consultant = "Consultant"
+}
 
 export abstract class EmployeeRole {
+    private lineManager: User | null = null;
     abstract getType(): EmployeeType;
 
-    getLineManager(): LineManager {
-        return new LineManager();
+    getLineManager(): User | null {
+        return this.lineManager;
     }
-    setLineManager(lineManager: LineManager): LineManager {
-        return new LineManager();
+    setLineManager(lineManager: User): void {
+        this.lineManager = lineManager;
     }
     createDraftClaim(): Claim {
         return new Claim({
@@ -47,12 +56,4 @@ export abstract class EmployeeRole {
     getClaimsByStatus(status: ClaimStatus): Claim[] {
         return [];
     }
-}
-
-export enum EmployeeType {
-    LineManager,
-    PayrollOfficer,
-    Administrator,
-    GeneralStaff,
-    Consultant
 }

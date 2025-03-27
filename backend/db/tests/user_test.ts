@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import { db } from "./drizzle";
-import { usersTable } from "./schema";
+import { db } from "../drizzle";
+import { usersTable } from "../schema";
 
 async function TestInsert() {
     const insert = await db.insert(usersTable).values({
@@ -8,6 +8,7 @@ async function TestInsert() {
         familyName: "FamilyName",
         email: "Email",
         employeeClassification: "Internal",
+        employeeRole: "General Staff",
         region: "UK",
     }).returning();
 

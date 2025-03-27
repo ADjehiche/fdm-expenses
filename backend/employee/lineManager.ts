@@ -6,8 +6,9 @@ export class LineManager extends EmployeeRole {
     private employeeType: EmployeeType = EmployeeType.LineManager;
     private employees: User[] = [];
 
-    constructor() {
+    constructor(employees: User[]) {
         super();
+        this.employees = employees;
     }
 
     getType(): EmployeeType {

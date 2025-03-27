@@ -2,6 +2,7 @@ import { User } from "../user";
 import { EmployeeClassification } from "../user";
 import { GeneralStaff } from "./generalStaff";
 import { EmployeeRole, EmployeeType } from "./employeeRole";
+import { DatabaseManager } from "../db/databaseManager";
 
 export class Administrator extends EmployeeRole {
     private employeeType: EmployeeType = EmployeeType.Administrator;
@@ -53,7 +54,9 @@ export class Administrator extends EmployeeRole {
         return [];
     }
 
-    setEmployeesLineManager(employeeUserId: string, managerUserId: string) {
+    async setEmployeesLineManager(employeeUserId: number, managerUserId: number): Promise<boolean> {
+        const db = DatabaseManager.getInstance();
+        return db.setLineManager(employeeUserId, managerUserId);
     }
 
     changeEmployeesRegion(employeeUserId: string, region: string) {
