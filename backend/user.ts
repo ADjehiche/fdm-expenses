@@ -82,6 +82,10 @@ export class User {
     public setEmail(email: string): void {
         this.email = email;
     }
+
+    public getCreatedAt(): Date {
+        return this.createdAt;
+    }
 }
 
 export enum EmployeeClassification {
