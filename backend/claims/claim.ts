@@ -1,7 +1,9 @@
 export class Claim {
-    private id: string;
+    private id: number;
     private createdAt: Date;
     private amount: number;
+    private attemptCount: number;
+    private employeeId: number;
     private lastUpdated: Date;
     private status: ClaimStatus;
     private evidence: Array<File>;
@@ -12,13 +14,17 @@ export class Claim {
         createdAt,
         amount,
         lastUpdated,
+        attemptCount,
+        employeeId,
         status,
         evidence,
         feedback
     }: {
-        id: string,
+        id: number,
         createdAt: Date,
         amount: number,
+        attemptCount: number,
+        employeeId: number,
         lastUpdated: Date,
         status: ClaimStatus,
         evidence: Array<File>,
@@ -27,13 +33,15 @@ export class Claim {
         this.id = id;
         this.createdAt = createdAt;
         this.amount = amount;
+        this.attemptCount = attemptCount;
         this.lastUpdated = lastUpdated;
+        this.employeeId = employeeId;
         this.status = status;
         this.evidence = evidence;
         this.feedback = feedback;
     }
 
-    public getId(): string {
+    public getId(): number {
         return this.id;
     }
 
@@ -59,6 +67,12 @@ export class Claim {
 
     public getFeedback(): string { return this.feedback; }
     public setFeedback(feedback: string): void { this.feedback = feedback }
+
+    public getAttemptCount(): number { return this.attemptCount; }
+    public setAttemptCount(attemptCount: number): void { this.attemptCount = attemptCount; }
+
+    public getEmployeeId(): number { return this.employeeId; }
+    public setEmployeeId(employeeId: number): void { this.employeeId = employeeId; }
 }
 
 export enum ClaimStatus {

@@ -3,8 +3,8 @@ import { EmployeeRole, EmployeeType } from "./employeeRole";
 export class Consultant extends EmployeeRole {
     employeeType: EmployeeType = EmployeeType.Consultant;
 
-    constructor() {
-        super();
+    constructor(userId: number) {
+        super(userId);
     }
 
     getType(): EmployeeType {

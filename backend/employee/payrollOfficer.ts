@@ -1,22 +1,25 @@
-import { Claim } from "../claims/claim";
+import { Claim, ClaimStatus } from "../claims/claim";
+import { DatabaseManager } from "../db/databaseManager";
 import { EmployeeRole, EmployeeType } from "./employeeRole";
 
 export class PayrollOfficer extends EmployeeRole {
     employeeType: EmployeeType = EmployeeType.PayrollOfficer;
 
-    constructor() {
-        super();
+    constructor(userId: number) {
+        super(userId);
     }
 
     getType(): EmployeeType {
         return this.employeeType;
     }
 
-    getAcceptedClaims(): Claim[] {
-        return [];
+    async getAcceptedClaims(): Promise<Claim[]> {
+        const db = DatabaseManager.getInstance();
+        return await db.getAllAcceptedClaims();
     }
 
-    reimburseExpense(claim: Claim): boolean {
-        return false;
+    async reimburseExpense(claim: Claim): Promise<boolean> {
+        const db = DatabaseManager.getInstance();
+        return await db.updateClaimStatus(claim.getId(), ClaimStatus.REIMBURSED);
     }
 }

@@ -1,15 +1,15 @@
-import { eq } from "drizzle-orm";
+import { eq, and, or, not } from "drizzle-orm";
 import { EmployeeClassification, User } from "../user";
 import { db } from "./drizzle";
-import { lineManagersTable, usersTable } from "./schema";
+import { claimsTable, lineManagersTable, usersTable } from "./schema";
 import { GeneralStaff } from "../employee/generalStaff";
-import { Claim } from "../claims/claim";
-import { type EmployeeRole, EmployeeType } from "../employee/employeeRole";
+import { Claim, ClaimStatus } from "../claims/claim";
+import { EmployeeRole, EmployeeType } from "../employee/employeeRole";
 import { LineManager } from "../employee/lineManager";
 import { Administrator } from "../employee/administrator";
 import { PayrollOfficer } from "../employee/payrollOfficer";
 import { Consultant } from "../employee/consultant";
-
+import bcrypt from "bcrypt";
 export class DatabaseManager {
     static #instance: DatabaseManager;
 
@@ -20,6 +20,40 @@ export class DatabaseManager {
             this.#instance = new DatabaseManager();
         }
         return this.#instance;
+    }
+
+    /**
+     * Login with username and password and return user
+     * */
+    async Login(email: string, password: string): Promise<User | null> {
+        const result = await db.select().from(usersTable).where(and(eq(usersTable.email, email), eq(usersTable.hashedPassword, await bcrypt.hash(password, 10))));
+        if (result.length != 1) return null;
+
+        return this.getAccount(result[0].id);
+    }
+
+    /**
+     * Register a new user with email and password
+     * Don't register if email already exists or admnistrator already exists. Administrators should create accounts
+     */
+    async Register(email: string, password: string): Promise<User | null> {
+        const result = await db.select().from(usersTable).where(or(eq(usersTable.email, email), eq(usersTable.employeeRole, "Administrator")));
+        if (result.length != 0) return null;
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const insert = await db.insert(usersTable).values({
+            firstName: "Adminsistrator",
+            familyName: "",
+            region: "UK",
+            email: email,
+            hashedPassword: hashedPassword,
+            employeeClassification: "Internal",
+            employeeRole: "Administrator"
+        }).returning();
+
+        if (insert.length != 1) return null;
+
+        return this.getAccount(insert[0].id);
     }
 
     async getUsersForRegion(region: string): Promise<User[]> {
@@ -33,16 +67,17 @@ export class DatabaseManager {
                 email: row.email,
                 employeeClassification: row.employeeClassification === "Internal" ? EmployeeClassification.Internal : EmployeeClassification.External,
                 region: row.region,
-                employeeRole: new GeneralStaff()
+                employeeRole: new GeneralStaff(row.id)
             })
         });
     }
 
-    async addAccount(user: User): Promise<User | null> {
+    async addAccount(user: User, password: string): Promise<User | null> {
         const insert = await db.insert(usersTable).values({
             firstName: user.getName(),
             familyName: user.getName(),
             email: user.getEmail(),
+            hashedPassword: await bcrypt.hash(password, 10),
             employeeClassification: user.getEmployeeClassification() === EmployeeClassification.Internal ? "Internal" : "External",
             employeeRole: user.getEmployeeRole().getType(),
             region: user.getRegion()
@@ -74,19 +109,19 @@ export class DatabaseManager {
         switch (employeeType) {
             case EmployeeType.LineManager:
                 const employees = await this.getManagersEmployees(userId);
-                employeeRole = new LineManager(employees);
+                employeeRole = new LineManager(userId, employees);
                 break;
             case EmployeeType.Administrator:
-                employeeRole = new Administrator();
+                employeeRole = new Administrator(userId);
                 break;
             case EmployeeType.GeneralStaff:
-                employeeRole = new GeneralStaff();
+                employeeRole = new GeneralStaff(userId);
                 break;
             case EmployeeType.PayrollOfficer:
-                employeeRole = new PayrollOfficer();
+                employeeRole = new PayrollOfficer(userId);
                 break;
             case EmployeeType.Consultant:
-                employeeRole = new Consultant();
+                employeeRole = new Consultant(userId);
                 break;
             default:
                 console.error("DatabaseManager", "Unknown employee type");
@@ -124,6 +159,22 @@ export class DatabaseManager {
             region: result[0].region,
             employeeRole: employeeRole
         })
+    }
+
+    async deleteAccount(userId: number): Promise<boolean> {
+        const deleteUser = await db.delete(usersTable).where(and(eq(usersTable.id, userId), not(eq(usersTable.employeeRole, "Administrator")))).returning();
+        if (deleteUser.length === 0) {
+            return false;
+        }
+
+        if (deleteUser[0].lineManagerId) {
+            const deleteLineManager = await db.delete(lineManagersTable).where(or(eq(lineManagersTable.lineManagerId, userId), eq(lineManagersTable.employeeId, userId))).returning();
+            if (deleteLineManager.length === 0) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     async getManagersEmployees(managerUserId: number): Promise<User[]> {
@@ -180,16 +231,204 @@ export class DatabaseManager {
         return createLineManager.length === 1;
     }
 
-    async addClaim(claim: Claim): Promise<boolean> {
-        return false;
+    async setEmployeeRegion(employeeUserId: number, region: string): Promise<boolean> {
+        const updateUser = await db.update(usersTable).set({
+            region: region
+        }).where(eq(usersTable.id, employeeUserId)).returning();
+        if (!updateUser) {
+            return false;
+        }
+        return updateUser.length === 1;
     }
 
-    async updateClaim(claim: Claim): Promise<boolean> {
-        return false;
+    async setEmployeeEmail(employeeUserId: number, email: string): Promise<boolean> {
+        const updateUser = await db.update(usersTable).set({
+            email: email
+        }).where(eq(usersTable.id, employeeUserId)).returning();
+        if (!updateUser) {
+            return false;
+        }
+        return updateUser.length === 1;
+    }
+
+    async setEmployeeRole(employeeUserId: number, role: EmployeeType): Promise<boolean> {
+        const user = await this.getAccount(employeeUserId);
+        if (!user) {
+            console.error("DatabaseManager", "Failed to get user for employeeUserId", employeeUserId);
+            return false;
+        }
+
+        if (user.getEmployeeRole().getType() === role) {
+            console.warn("DatabaseManager", "User already has the same role", user.getEmployeeRole().getType());
+            return false;
+        }
+
+        if (user.getEmployeeRole().getType() == "Line Manager") {
+            console.log("DatabaseManager", "Deleting line manager for user", employeeUserId);
+            const deleteLineManager = await db.delete(lineManagersTable).where(eq(lineManagersTable.lineManagerId, employeeUserId)).returning();
+            console.log("DatabaseManager", "deleteLineManager", deleteLineManager.length);
+            const updateUsers = await db.update(usersTable).set({
+                lineManagerId: null
+            }).where(eq(usersTable.lineManagerId, employeeUserId)).returning();
+            console.log("DatabaseManager", "updateUsers", updateUsers.length);
+        }
+
+        const updateUser = await db.update(usersTable).set({
+            employeeRole: role
+        }).where(eq(usersTable.id, employeeUserId)).returning();
+        if (!updateUser) {
+            return false;
+        }
+
+        return updateUser.length === 1;
+    }
+
+    async getAllAccounts(): Promise<User[]> {
+        const result = await db.select().from(usersTable);
+
+        let users: User[] = [];
+
+        for (let i = 0; i < result.length; i++) {
+            const userRow = result[i];
+            const employeeRole = await this.getEmployeeRole(userRow.id, userRow.employeeRole as EmployeeType);
+            if (!employeeRole) {
+                console.error("DatabaseManager", "Failed to get employee role for user", userRow.id);
+                continue;
+            }
+            const user = new User({
+                email: userRow.email,
+                id: userRow.id,
+                createdAt: userRow.createdAt,
+                firstName: userRow.firstName,
+                familyName: userRow.familyName,
+                employeeClassification: userRow.employeeClassification === "Internal" ? EmployeeClassification.Internal : EmployeeClassification.External,
+                region: userRow.region,
+                employeeRole: employeeRole
+            })
+            users.push(user);
+        }
+
+        return users;
+    }
+
+    async addClaim(claim: Claim): Promise<Claim | null> {
+        const insert = await db.insert(claimsTable).values({
+            createdAt: claim.getCreatedAt(),
+            lastUpdated: claim.getLastUpdated(),
+            amount: claim.getAmount(),
+            employeeId: claim.getEmployeeId(),
+            attemptCount: claim.getAttemptCount(),
+            status: claim.getStatus() as typeof claimsTable.$inferInsert["status"],
+            feedback: claim.getFeedback()
+        }).returning();
+        if (insert.length !== 1) {
+            return null;
+        }
+        return new Claim({
+            id: insert[0].id,
+            createdAt: insert[0].createdAt,
+            lastUpdated: insert[0].lastUpdated,
+            amount: insert[0].amount,
+            employeeId: insert[0].employeeId,
+            attemptCount: insert[0].attemptCount,
+            status: insert[0].status as ClaimStatus,
+            feedback: insert[0].feedback,
+            evidence: []
+        });
+    }
+
+    async updateClaimStatus(claimId: number, newClaimStatus: ClaimStatus): Promise<boolean> {
+        const result = await db.update(claimsTable).set({
+            status: newClaimStatus as typeof claimsTable.$inferInsert["status"],
+        }).where(eq(claimsTable.id, claimId)).returning();
+
+        if (!result) {
+            return false;
+        }
+        return result.length === 1;
+    }
+
+    async updateClaimAttemptCount(claimId: number, newAttemptCount: number): Promise<boolean> {
+        const result = await db.update(claimsTable).set({
+            attemptCount: newAttemptCount,
+        }).where(eq(claimsTable.id, claimId)).returning();
+
+        if (!result) {
+            return false;
+        }
+        return result.length === 1;
     }
 
     async getClaim(claimId: number): Promise<Claim | null> {
-        return null;
+        const result = await db.select().from(claimsTable).where(eq(claimsTable.id, claimId));
+        if (!result || result.length > 1) return null
+
+        return new Claim({
+            id: result[0].id,
+            createdAt: result[0].createdAt,
+            lastUpdated: result[0].lastUpdated,
+            amount: result[0].amount,
+            employeeId: result[0].employeeId,
+            attemptCount: result[0].attemptCount,
+            status: result[0].status as ClaimStatus,
+            feedback: result[0].feedback,
+            evidence: []
+        })
+    }
+
+    async getClaimsByManager(managerId: number): Promise<Claim[]> {
+        const result = await db.select().from(claimsTable).innerJoin(lineManagersTable, eq(claimsTable.employeeId, lineManagersTable.employeeId)).where(eq(lineManagersTable.lineManagerId, managerId));
+        return result.map((row) => {
+            const claim = row.claims_table
+            return new Claim({
+                id: claim.id,
+                createdAt: claim.createdAt,
+                lastUpdated: claim.lastUpdated,
+                amount: claim.amount,
+                employeeId: claim.employeeId,
+                attemptCount: claim.attemptCount,
+                status: claim.status as ClaimStatus,
+                feedback: claim.feedback,
+                evidence: []
+            })
+        })
+    }
+
+    async getOwnClaimsByStatus(userId: number, status: ClaimStatus): Promise<Claim[]> {
+        const result = await db.select().from(claimsTable).where(and(eq(claimsTable.status, status), eq(claimsTable.employeeId, userId)));
+        if (!result) return []
+        return result.map((row) => {
+            return new Claim({
+                id: row.id,
+                createdAt: row.createdAt,
+                lastUpdated: row.lastUpdated,
+                amount: row.amount,
+                employeeId: row.employeeId,
+                attemptCount: row.attemptCount,
+                status: row.status as ClaimStatus,
+                feedback: row.feedback,
+                evidence: []
+            })
+        })
+    }
+
+    async getAllAcceptedClaims(): Promise<Claim[]> {
+        const result = await db.select().from(claimsTable).where(eq(claimsTable.status, "Accepted"));
+        if (!result) return []
+
+        return result.map((row) => {
+            return new Claim({
+                id: row.id,
+                createdAt: row.createdAt,
+                lastUpdated: row.lastUpdated,
+                amount: row.amount,
+                employeeId: row.employeeId,
+                attemptCount: row.attemptCount,
+                status: row.status as ClaimStatus,
+                feedback: row.feedback,
+                evidence: []
+            })
+        })
     }
 
 

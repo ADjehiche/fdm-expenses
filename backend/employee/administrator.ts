@@ -7,51 +7,59 @@ import { DatabaseManager } from "../db/databaseManager";
 export class Administrator extends EmployeeRole {
     private employeeType: EmployeeType = EmployeeType.Administrator;
 
-    constructor() {
-        super();
+    constructor(userId: number) {
+        super(userId);
     }
 
     getType(): EmployeeType {
         return this.employeeType;
     }
 
-    createAccount({
+    async createAccount({
         id,
         firstName,
         familyName,
         email,
-        hashedPassword,
+        plainPassword,
         region
     }: {
         id: number,
         firstName: string,
         familyName: string,
         email: string,
-        hashedPassword: string,
+        plainPassword: string,
         region: string
-    }): User {
-        return new User({
+    }): Promise<User | null> {
+        const newUser = new User({
             id,
             createdAt: new Date(),
             firstName,
             familyName,
             email,
             employeeClassification: EmployeeClassification.Internal,
-            region: "UK",
-            employeeRole: new GeneralStaff()
+            region: region,
+            employeeRole: new GeneralStaff(-1)
         })
+
+        const db = DatabaseManager.getInstance();
+        if (!db) return null;
+
+        return await db.addAccount(newUser, plainPassword);
     }
 
-    deleteAccount(user: User): boolean {
-        return false;
+    async deleteAccount(userId: number): Promise<boolean> {
+        const db = DatabaseManager.getInstance();
+        return await db.deleteAccount(userId);
     }
 
-    changeRole(userId: string, role: EmployeeRole): boolean {
-        return false;
+    async changeRole(userId: number, role: EmployeeType): Promise<boolean> {
+        const db = DatabaseManager.getInstance();
+        return db.setEmployeeRole(userId, role);
     }
 
-    getAccounts(): User[] {
-        return [];
+    async getAccounts(): Promise<User[]> {
+        const db = DatabaseManager.getInstance();
+        return await db.getAllAccounts();
     }
 
     async setEmployeesLineManager(employeeUserId: number, managerUserId: number): Promise<boolean> {
@@ -59,9 +67,13 @@ export class Administrator extends EmployeeRole {
         return db.setLineManager(employeeUserId, managerUserId);
     }
 
-    changeEmployeesRegion(employeeUserId: string, region: string) {
+    async changeEmployeesRegion(employeeUserId: number, region: string) {
+        const db = DatabaseManager.getInstance();
+        return db.setEmployeeRegion(employeeUserId, region);
     }
 
-    changeEmployeesEmail(employeeUserId: string, email: string) {
+    async changeEmployeesEmail(employeeUserId: number, email: string) {
+        const db = DatabaseManager.getInstance();
+        return db.setEmployeeEmail(employeeUserId, email);
     }
 }

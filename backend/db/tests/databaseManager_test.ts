@@ -20,9 +20,9 @@ async function TestDatabaseManager() {
         familyName: "FamilyName",
         email: "Email",
         employeeClassification: EmployeeClassification.Internal,
-        employeeRole: new GeneralStaff(),
+        employeeRole: new GeneralStaff(-1),
         region: "UK",
-    }))
+    }), "password")
 
     if (!employee) {
         throw new Error("Employee Insert failed");
@@ -37,9 +37,9 @@ async function TestDatabaseManager() {
         familyName: "FamilyName",
         email: "Email",
         employeeClassification: EmployeeClassification.Internal,
-        employeeRole: new LineManager([]),
+        employeeRole: new LineManager(-1, []),
         region: "UK",
-    }));
+    }), "password");
 
     if (!lineManager) {
         throw new Error("Line Manager Insert failed");
@@ -54,9 +54,9 @@ async function TestDatabaseManager() {
         familyName: "FamilyName",
         email: "Email",
         employeeClassification: EmployeeClassification.Internal,
-        employeeRole: new Administrator(),
+        employeeRole: new Administrator(-1),
         region: "UK",
-    }))
+    }), "password")
 
     if (!administrator) {
         throw new Error("Administrator Insert failed");
