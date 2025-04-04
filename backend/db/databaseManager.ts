@@ -15,6 +15,8 @@ export class DatabaseManager {
 
     private constructor() { }
 
+    private db = db; // Initialize the db property with the imported database connection
+
     public static getInstance(): DatabaseManager {
         if (!this.#instance) {
             this.#instance = new DatabaseManager();
@@ -74,8 +76,8 @@ export class DatabaseManager {
 
     async addAccount(user: User, password: string): Promise<User | null> {
         const insert = await db.insert(usersTable).values({
-            firstName: user.getName(),
-            familyName: user.getName(),
+            firstName: user.getFirstName(),
+            familyName: user.getFamilyName(),
             email: user.getEmail(),
             hashedPassword: await bcrypt.hash(password, 10),
             employeeClassification: user.getEmployeeClassification() === EmployeeClassification.Internal ? "Internal" : "External",
@@ -283,34 +285,6 @@ export class DatabaseManager {
         return updateUser.length === 1;
     }
 
-    async getAllAccounts(): Promise<User[]> {
-        const result = await db.select().from(usersTable);
-
-        let users: User[] = [];
-
-        for (let i = 0; i < result.length; i++) {
-            const userRow = result[i];
-            const employeeRole = await this.getEmployeeRole(userRow.id, userRow.employeeRole as EmployeeType);
-            if (!employeeRole) {
-                console.error("DatabaseManager", "Failed to get employee role for user", userRow.id);
-                continue;
-            }
-            const user = new User({
-                email: userRow.email,
-                id: userRow.id,
-                createdAt: userRow.createdAt,
-                firstName: userRow.firstName,
-                familyName: userRow.familyName,
-                employeeClassification: userRow.employeeClassification === "Internal" ? EmployeeClassification.Internal : EmployeeClassification.External,
-                region: userRow.region,
-                employeeRole: employeeRole
-            })
-            users.push(user);
-        }
-
-        return users;
-    }
-
     async addClaim(claim: Claim): Promise<Claim | null> {
         const insert = await db.insert(claimsTable).values({
             createdAt: claim.getCreatedAt(),
@@ -431,5 +405,27 @@ export class DatabaseManager {
         })
     }
 
+    public async getAllAccounts(): Promise<User[]> {
+        try {
+          const rows = await this.db.all(`SELECT * FROM users`);
+          
+          // Map DB rows to User instances if needed
+        return rows.map((row: any) => new User(
+            {
+                id: row.id,
+                createdAt: new Date(row.createdAt), // Ensure createdAt is properly mapped
+                firstName: row.firstName,
+                familyName: row.familyName,
+                email: row.email,
+                employeeClassification: row.employeeClassification === "Internal" ? EmployeeClassification.Internal : EmployeeClassification.External, // Map employeeClassification
+                region: row.region,
+                employeeRole: new GeneralStaff(row.id)
+            }
+        ));
+        } catch (error) {
+          console.error("Error fetching users:", error);
+          return [];
+        }
+      }
 
 }

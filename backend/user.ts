@@ -51,8 +51,12 @@ export class User {
         return this.employeeClassification;
     }
 
-    public getName(): string {
+    public getFirstName(): string {
         return this.firstName;
+    }
+
+    public getFamilyName(): string {
+        return this.familyName;
     }
 
     public getId(): number {
