@@ -2,10 +2,10 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { getCurrentUser } from "@/actions/loginauth";
-import { User } from "@/backend/user";
+import { SerializedUser } from "@/backend/serializedTypes";
 
 type UserContextType = {
-  user: User | null;
+  user: SerializedUser | null;
   loading: boolean;
   refreshUser: () => Promise<void>;
 };
@@ -13,7 +13,7 @@ type UserContextType = {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SerializedUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refreshUser = async () => {

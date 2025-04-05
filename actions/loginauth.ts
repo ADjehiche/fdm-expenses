@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 // Import the backend authentication components
 import { DatabaseManager } from "../backend/db/databaseManager";
 import { User } from "../backend/user";
+import { SerializedUser, serializeUser } from "../backend/serializedTypes";
 
 // Define the state type for form submissions
 type LoginState = {
@@ -121,9 +122,9 @@ export async function logout() {
 /**
  * Get the current authenticated user
  * Retrieves the user from the database based on the user_id cookie
- * @returns User object if authenticated, null otherwise
+ * @returns SerializedUser object if authenticated, null otherwise
  */
-export async function getCurrentUser(): Promise<User | null> {
+export async function getCurrentUser(): Promise<SerializedUser | null> {
   const cookie = await cookies();
   const userId = cookie.get("user_id")?.value;
 
@@ -134,5 +135,12 @@ export async function getCurrentUser(): Promise<User | null> {
 
   // Fetch the complete user object from the database
   const dbManager = DatabaseManager.getInstance();
-  return dbManager.getAccount(parseInt(userId));
+  const user = await dbManager.getAccount(parseInt(userId));
+  
+  if (!user) {
+    return null;
+  }
+  
+  // Convert User class to a serializable object
+  return serializeUser(user);
 }
