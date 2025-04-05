@@ -1,10 +1,20 @@
-"use server";
+"use client";
 
+import { useUser } from "@/app/contexts/UserContext";
 
-export default async function Home() {
+export default function UserProfile() {
+  const { user, loading } = useUser();
+
+  if (loading) return <div>Loading...</div>;
+  if (!user) return <div>Not logged in</div>;
+
   return (
-    <div className="">
-      <p>Hi firends, I will let you create a new claim. </p>
+    <div>
+      <h1>User Profile</h1>
+      <p>Name: {user.getFirstName()} {user.getFamilyName()}</p>
+      <p>Email: {user.getEmail()}</p>
+      <p>Role: {user.getEmployeeRole().getType()}</p>
+      <p>Region: {user.getRegion()}</p>
     </div>
   );
 }
