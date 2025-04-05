@@ -1,3 +1,4 @@
+"use client"
 import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
@@ -17,6 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { UserRole } from "@/lib/types";
+import { useUser } from "@/app/contexts/UserContext";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -27,6 +29,10 @@ export default function DashboardLayout({
   children,
   role = "employee",
 }: DashboardLayoutProps) {
+    const { user, loading } = useUser();
+  
+    if (loading) return <div>Loading...</div>;
+    if (!user) return <div>Not logged in</div>;
   return (
     <div className="min-h-screen flex flex-col">
       <header className="bg-fdm-blue text-white top-0 z-10">
@@ -45,7 +51,7 @@ export default function DashboardLayout({
             <div className="flex items-center space-x-4">
               <div className="text-sm">
                 <span className="block opacity-75">Welcome,</span>
-                <span className="font-medium">Acil D.</span>
+                <span className="font-medium">{user.firstName} {user.familyName}</span>
               </div>
             </div>
             <Button
