@@ -11,10 +11,10 @@ export default function UserProfile() {
   return (
     <div>
       <h1>User Profile</h1>
-      <p>Name: {user.getFirstName()} {user.getFamilyName()}</p>
-      <p>Email: {user.getEmail()}</p>
-      <p>Role: {user.getEmployeeRole().getType()}</p>
-      <p>Region: {user.getRegion()}</p>
+      <p>Name: {user.firstName} {user.familyName}</p>
+      <p>Email: {user.email}</p>
+      <p>Role: {user.employeeRoleType}</p>
+      <p>Region: {user.region}</p>
     </div>
   );
 }
