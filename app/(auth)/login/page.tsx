@@ -29,12 +29,19 @@ const LoginSchema = z.object({
 
 const initialState = {
   error: "",
+  success: false,
 };
 
 export default function LoginPage() {
   const router = useRouter();
   const [state, formAction] = useActionState(login, initialState); // Login will be a callback function that actually validates the details
   const [isPending, setIsPending] = useState(false);
+
+  useEffect(() => {
+    if (state.success) {
+      router.push("/dashboard");
+    }
+  }, [state.success, router]);
 
   const form = useForm<z.infer<typeof LoginSchema>>({
     resolver: zodResolver(LoginSchema),
