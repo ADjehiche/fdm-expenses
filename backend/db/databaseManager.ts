@@ -18,8 +18,6 @@ export class DatabaseManager {
 
     private constructor() { }
 
-    private db = db; // Initialize the db property with the imported database connection
-
     public static getInstance(): DatabaseManager {
         if (!this.#instance) {
             this.#instance = new DatabaseManager();
@@ -31,30 +29,38 @@ export class DatabaseManager {
      * Login with username and password and return user
      * */
     async Login(email: string, password: string): Promise<User | null> {
-        const result = await db.select().from(usersTable).where(and(eq(usersTable.email, email), eq(usersTable.hashedPassword, await bcrypt.hash(password, 10))));
+        const result = await db.select().from(usersTable).where(eq(usersTable.email, email));
         if (result.length != 1) return null;
+
+        const comparePasswords = bcrypt.compareSync(password, result[0].hashedPassword);
+        if (!comparePasswords) {
+            console.log("Incorrect password");
+            return null;
+        }
 
         return this.getAccount(result[0].id);
     }
 
     /**
-     * Register a new user with email and password
+     * Register a new admin user with email and password
      * Don't register if email already exists or admnistrator already exists. Administrators should create accounts
      */
-    async Register(email: string, password: string): Promise<User | null> {
+    async Register(email: string, password: string, isSuperUser?: boolean): Promise<User | null> {
         const result = await db.select().from(usersTable).where(or(eq(usersTable.email, email), eq(usersTable.employeeRole, "Administrator")));
-        if (result.length != 0) return null;
+        if (result.length != 0 && !isSuperUser) return null;
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const insert = await db.insert(usersTable).values({
-            firstName: "Adminsistrator",
-            familyName: "",
+            firstName: "FirstName",
+            familyName: "FamilyName",
             region: "UK",
             email: email,
             hashedPassword: hashedPassword,
             employeeClassification: "Internal",
             employeeRole: "Administrator"
         }).returning();
+
+        console.log("DatabaseManager", "Register", insert);
 
         if (insert.length != 1) return null;
 
