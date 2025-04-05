@@ -18,8 +18,14 @@ export class PayrollOfficer extends EmployeeRole {
         return await db.getAllAcceptedClaims();
     }
 
-    async reimburseExpense(claim: Claim): Promise<boolean> {
+    async reimburseExpense(claim: Claim): Promise<Claim | null> {
         const db = DatabaseManager.getInstance();
-        return await db.updateClaimStatus(claim.getId(), ClaimStatus.REIMBURSED);
+        const update = await db.updateClaimStatus(claim.getId(), ClaimStatus.REIMBURSED);
+        if (!update) {
+            console.error("Failed to update claim status to reimbursed", claim.getId());
+            return null;
+        }
+        claim.setStatus(ClaimStatus.REIMBURSED);
+        return claim;
     }
 }

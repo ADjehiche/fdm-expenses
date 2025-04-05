@@ -1,3 +1,5 @@
+import { DatabaseManager } from "../db/databaseManager";
+
 export class Claim {
     private id: number;
     private createdAt: Date;
@@ -6,8 +8,9 @@ export class Claim {
     private employeeId: number;
     private lastUpdated: Date;
     private status: ClaimStatus;
-    private evidence: Array<File>;
+    private evidence: Array<string>;
     private feedback: string;
+    static MAX_ATTEMPT_COUNT = 3;
 
     constructor({
         id,
@@ -27,7 +30,7 @@ export class Claim {
         employeeId: number,
         lastUpdated: Date,
         status: ClaimStatus,
-        evidence: Array<File>,
+        evidence: Array<string>,
         feedback: string
     }) {
         this.id = id;
@@ -52,12 +55,28 @@ export class Claim {
         this.status = newStatus;
     }
 
-    public getEvidence(): Array<File> { return this.evidence; }
-    public addEvidence(evidence: File): void { this.evidence.push(evidence); }
-    public removeEvidence(evidence: File): void { }
-
-    public appealClaim(): void { }
-    public submitClaim(): void { }
+    public getEvidence(): Array<string> { return this.evidence; }
+    public async addEvidence(evidenceFile: File): Promise<boolean> {
+        if (this.status !== ClaimStatus.DRAFT && this.status !== ClaimStatus.PENDING) {
+            console.error("ERROR - Claim has to be in draft state to add evidence", this.id, this.status);
+            return false;
+        }
+        const db = DatabaseManager.getInstance();
+        const evidenceSaved = await db.addEvidence(this.id, evidenceFile);
+        if (!evidenceSaved) {
+            console.error("Failed to save evidence", evidenceFile);
+            return false;
+        }
+        this.evidence.push(evidenceFile.name);
+        return true;
+    }
+    public removeEvidence(evidencePath: string): void {
+        if (this.status !== ClaimStatus.DRAFT) {
+            console.error("ERROR - Claim has to be in draft state to remove evidence", this.id, this.status);
+            return;
+        }
+        this.evidence = this.evidence.filter(evidence => evidence !== evidencePath);
+    }
 
     public getAmount(): number { return this.amount; }
     public setAmount(amount: number): void { this.amount = amount; }

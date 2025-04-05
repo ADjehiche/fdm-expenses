@@ -34,6 +34,11 @@ export class LineManager extends EmployeeRole {
     }
 
     async approveClaim(claim: Claim): Promise<Claim | null> {
+        if (claim.getStatus() !== ClaimStatus.PENDING) {
+            console.error("Claim is not in pending status", claim.getId(), claim.getStatus());
+            return null;
+        }
+
         const db = DatabaseManager.getInstance();
         const result = await db.updateClaimStatus(claim.getId(), ClaimStatus.ACCEPTED);
         if (!result) return null;
@@ -41,11 +46,21 @@ export class LineManager extends EmployeeRole {
         return claim;
     }
 
-    async rejectClaim(claim: Claim): Promise<Claim | null> {
+    async rejectClaim(claim: Claim, feedback: string): Promise<Claim | null> {
+        if (claim.getStatus() !== ClaimStatus.PENDING) {
+            console.error("Claim is not in pending status", claim.getId(), claim.getStatus());
+            return null;
+        }
         const db = DatabaseManager.getInstance();
         const reuslt = db.updateClaimStatus(claim.getId(), ClaimStatus.REJECTED);
         if (!reuslt) return null;
+        const result2 = db.updateClaimFeedback(claim.getId(), feedback);
+        if (!result2) return null;
+
         claim.setStatus(ClaimStatus.REJECTED);
+        claim.setFeedback(feedback);
         return claim;
     }
+
+
 }
