@@ -28,8 +28,8 @@ export default function DashboardLayout({
   role = "employee",
 }: DashboardLayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col bg-black">
-      <header className="bg-fdm-blue text-white sticky top-0 z-10">
+    <div className="min-h-screen flex flex-col">
+      <header className="bg-fdm-blue text-white top-0 z-10">
         <div className="container mx-auto px-4 py-6 flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <a

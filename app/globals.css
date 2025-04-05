@@ -27,51 +27,6 @@
   }
 }
 
-.fdm-background-image {
-  background-image: url(https://www.fdmgroup.com/wp-content/uploads/2024/03/iStock-1885088717-e1712310591975.jpg);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  filter: blur(0px);
-}
-
-.fdm-login-background {
-  background-image: url(https://www.fdmgroup.com/wp-content/uploads/2025/03/Blog-image-1-1-1920x978.png);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  filter: blur(0px);
-}
-.fdm-login-background::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: inherit;
-  background-size: inherit;
-  background-position: inherit;
-  background-repeat: inherit;
-  filter: blur(8px);
-  z-index: -1;
-}
-
-.fdm-background-image::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: inherit;
-  background-size: inherit;
-  background-position: inherit;
-  background-repeat: inherit;
-  filter: blur(8px);
-  z-index: -1;
-}
-
 body {
   background: var(--background);
   color: var(--foreground);

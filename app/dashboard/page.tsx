@@ -95,11 +95,27 @@ export default function dashboardPage() {
                       status={claim.status}
                     />
                   ))}
-                  ;
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py -6 text-center"></div>
+                <div className="flex flex-col items-center justify-center py -6 text-center">
+                  <AlertTriangle className="h-10 w-10 text-yellow-500 mb-2" />
+                  <h3 className="font-medium text-lg">
+                    No recent claims found
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    You don't have any recent expense claims.
+                  </p>
+                </div>
               )}
+              <Button
+                variant="outline"
+                className="w-full mt-4 bg-[#c3fa04]"
+                asChild
+              >
+                <Link href="/dashboard/claims">
+                  View all claims <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
