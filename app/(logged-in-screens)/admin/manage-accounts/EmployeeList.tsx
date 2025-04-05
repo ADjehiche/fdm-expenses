@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { User } from '../../../../backend/user'; // Adjust if your path differs
+import React from 'react';
+import { User } from '../../../../backend/user';  // Adjust the path accordingly
 
-// Define the prop type for the component
+// Define prop types for EmployeeList
 interface EmployeeListProps {
   users: User[];
 }
@@ -21,7 +21,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ users }) => {
                 {user.getFirstName()} {user.getFamilyName()}
               </h3>
               <p>Email: {user.getEmail()}</p>
-              <p>Role: {user.getEmployeeRole().getType()}</p>
+              <p>Role: {user.getEmployeeRole().toString()}</p>
               <p>Region: {user.getRegion()}</p>
             </li>
           ))

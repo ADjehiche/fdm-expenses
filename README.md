@@ -2,6 +2,6 @@
 
 - Install npm
 - run npm install
-- cp .env.sample .env
+# IGNORE - cp .env.sample .env | Pull .env from main branch
 - npx drizzle-kit push
 - npm run dev

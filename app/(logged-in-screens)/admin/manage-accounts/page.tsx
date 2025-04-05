@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { DatabaseManager } from '../../../../backend/db/databaseManager';
-import { User } from '../../../../backend/user'; // Adjust if your path differs
-import EmployeeList from './EmployeeList'; // Adjust if your path differs
+import { User } from '../../../../backend/user'; // Adjust the path accordingly
+import EmployeeList from './EmployeeList';
 
-// Export a helper to fetch users
+// Fetch users server-side for the page
 export async function fetchAllUsers(): Promise<User[]> {
   const db = DatabaseManager.getInstance();
   try {
@@ -15,31 +15,16 @@ export async function fetchAllUsers(): Promise<User[]> {
   }
 }
 
-const AdminPage: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);  // State to store fetched users
-  const [loading, setLoading] = useState<boolean>(true);  // Loading state
-
-  // Fetch users when the component mounts
-  useEffect(() => {
-    const loadUsers = async () => {
-      const fetchedUsers = await fetchAllUsers();
-      setUsers(fetchedUsers);
-      setLoading(false);
-    };
-
-    loadUsers();
-  }, []);
+// Page Component that fetches users and passes them to EmployeeList
+const ManageAccountsPage = async () => {
+  const users = await fetchAllUsers();
 
   return (
-    <div className="mt-4">
-      <h2 className="text-lg font-semibold">Admin Panel</h2>
-      {loading ? (
-        <p>Loading users...</p>
-      ) : (
-        <EmployeeList users={users} /> // Pass the fetched users to EmployeeList component
-      )}
+    <div>
+      <h1 className="text-2xl font-semibold">Manage Accounts</h1>
+      <EmployeeList users={users} />
     </div>
   );
 };
 
-export default AdminPage;
+export default ManageAccountsPage;
