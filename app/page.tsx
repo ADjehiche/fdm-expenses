@@ -56,11 +56,13 @@ export default function Home() {
           />
           <section className="text-white flex flex-col justify-center items-center z-10">
             <div className="container mx-auto mb-40 px-4 text-center">
-              <h1 className="text-4xl md:text-6xl font-bold mb-6 font-sans">
-                <em className="text-[#c3fa04]">Seamless </em>
+              <h1 className="text-4xl md:text-6xl font-bold mb-6 font-sans selection:bg-[#c3fa04]">
+                <em className="text-[#c3fa04] selection:text-white">
+                  Seamless{" "}
+                </em>
                 Expense Tracking
               </h1>
-              <p className="text-xl mb-8 max-w-2xl mx-auto">
+              <p className="text-xl mb-8 max-w-2xl mx-auto selection:bg-[#c3fa04]">
                 The FDM Expense Tracker simplifies the process of submitting,
                 approving, and managing expense claims.
               </p>
@@ -68,7 +70,7 @@ export default function Home() {
                 <Button
                   asChild
                   size="lg"
-                  className="bg-[#c3fa04] hover:bg-[#c3fa04]/90 text-black"
+                  className="bg-[#c3fa04] hover:bg-[#c3fa04]/90 hover:scale-[1.02] transition-[0.2s] text-black"
                 >
                   <Link href="/login">Login</Link>
                 </Button>
