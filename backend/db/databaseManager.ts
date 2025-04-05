@@ -10,8 +10,11 @@ import { Administrator } from "../employee/administrator";
 import { PayrollOfficer } from "../employee/payrollOfficer";
 import { Consultant } from "../employee/consultant";
 import bcrypt from "bcrypt";
+import fs from "fs";
+
 export class DatabaseManager {
     static #instance: DatabaseManager;
+    private fileStoragePath = "./backend/db/fileStorage"
 
     private constructor() { }
 
@@ -58,20 +61,60 @@ export class DatabaseManager {
         return this.getAccount(insert[0].id);
     }
 
+    public async getAllAccounts(): Promise<User[]> {
+        try {
+            const userRows = await db.select().from(usersTable);
+
+            const users = []
+            for (let i = 0; i < userRows.length; i++) {
+                const userRow = userRows[i];
+                const employeeRole = await this.getEmployeeRole(userRow.id, userRow.employeeRole as EmployeeType);
+                if (!employeeRole) {
+                    console.error("DatabaseManager", "Failed to get employee role for user", userRow.id);
+                    continue;
+                }
+                users.push(new User({
+                    email: userRow.email,
+                    id: userRow.id,
+                    createdAt: userRow.createdAt,
+                    firstName: userRow.firstName,
+                    familyName: userRow.familyName,
+                    employeeClassification: userRow.employeeClassification === "Internal" ? EmployeeClassification.Internal : EmployeeClassification.External,
+                    region: userRow.region,
+                    employeeRole: employeeRole
+                }))
+            }
+
+            return users;
+        } catch (error) {
+            console.error("Error fetching users:", error);
+            return [];
+        }
+    }
+
     async getUsersForRegion(region: string): Promise<User[]> {
-        const result = await db.select().from(usersTable).where(eq(usersTable.region, region));
-        return result.map((row) => {
-            return new User({
-                id: row.id,
-                createdAt: row.createdAt,
-                firstName: row.firstName,
-                familyName: row.familyName,
-                email: row.email,
-                employeeClassification: row.employeeClassification === "Internal" ? EmployeeClassification.Internal : EmployeeClassification.External,
-                region: row.region,
-                employeeRole: new GeneralStaff(row.id)
-            })
-        });
+        const userRows = await db.select().from(usersTable).where(eq(usersTable.region, region));
+        const users = []
+        for (let i = 0; i < userRows.length; i++) {
+            const userRow = userRows[i];
+            const employeeRole = await this.getEmployeeRole(userRow.id, userRow.employeeRole as EmployeeType);
+            if (!employeeRole) {
+                console.error("DatabaseManager", "Failed to get employee role for user", userRow.id);
+                continue;
+            }
+            users.push(new User({
+                email: userRow.email,
+                id: userRow.id,
+                createdAt: userRow.createdAt,
+                firstName: userRow.firstName,
+                familyName: userRow.familyName,
+                employeeClassification: userRow.employeeClassification === "Internal" ? EmployeeClassification.Internal : EmployeeClassification.External,
+                region: userRow.region,
+                employeeRole: employeeRole
+            }))
+        }
+
+        return users;
     }
 
     async addAccount(user: User, password: string): Promise<User | null> {
@@ -346,7 +389,7 @@ export class DatabaseManager {
             attemptCount: result[0].attemptCount,
             status: result[0].status as ClaimStatus,
             feedback: result[0].feedback,
-            evidence: []
+            evidence: this.getClaimEvidence(result[0].id)
         })
     }
 
@@ -363,7 +406,7 @@ export class DatabaseManager {
                 attemptCount: claim.attemptCount,
                 status: claim.status as ClaimStatus,
                 feedback: claim.feedback,
-                evidence: []
+                evidence: this.getClaimEvidence(claim.id)
             })
         })
     }
@@ -381,9 +424,29 @@ export class DatabaseManager {
                 attemptCount: row.attemptCount,
                 status: row.status as ClaimStatus,
                 feedback: row.feedback,
-                evidence: []
+                evidence: this.getClaimEvidence(row.id)
             })
         })
+    }
+
+    async updateClaimFeedback(claimId: number, feedback: string): Promise<boolean> {
+        const result = await db.update(claimsTable).set({
+            feedback: feedback
+        }).where(eq(claimsTable.id, claimId)).returning();
+        if (!result) {
+            return false;
+        }
+        return result.length === 1;
+    }
+
+    async updateClaimAmount(claimId: number, amount: number): Promise<boolean> {
+        const result = await db.update(claimsTable).set({
+            amount: amount
+        }).where(eq(claimsTable.id, claimId)).returning();
+        if (!result) {
+            return false;
+        }
+        return result.length === 1;
     }
 
     async getAllAcceptedClaims(): Promise<Claim[]> {
@@ -400,32 +463,78 @@ export class DatabaseManager {
                 attemptCount: row.attemptCount,
                 status: row.status as ClaimStatus,
                 feedback: row.feedback,
-                evidence: []
+                evidence: this.getClaimEvidence(row.id)
             })
         })
     }
 
-    public async getAllAccounts(): Promise<User[]> {
-        try {
-          const rows = await this.db.all(`SELECT * FROM users`);
-          
-          // Map DB rows to User instances if needed
-        return rows.map((row: any) => new User(
-            {
-                id: row.id,
-                createdAt: new Date(row.createdAt), // Ensure createdAt is properly mapped
-                firstName: row.firstName,
-                familyName: row.familyName,
-                email: row.email,
-                employeeClassification: row.employeeClassification === "Internal" ? EmployeeClassification.Internal : EmployeeClassification.External, // Map employeeClassification
-                region: row.region,
-                employeeRole: new GeneralStaff(row.id)
-            }
-        ));
-        } catch (error) {
-          console.error("Error fetching users:", error);
-          return [];
+
+    getClaimEvidence(claimId: number): string[] {
+        const claimPath = `${this.fileStoragePath}/${claimId}`;
+
+        const claimPathExists = fs.existsSync(claimPath);
+        if (!claimPathExists) {
+            console.error("DatabaseManager", "Get Claim Evidence - Claim path does not exist", claimPath);
+            return [];
         }
-      }
+
+        const files = fs.readdirSync(claimPath);
+        const evidenceFiles: string[] = [];
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const filePath = `${claimPath}/${file}`;
+            const fileStat = fs.statSync(filePath);
+            if (fileStat.isFile()) {
+                evidenceFiles.push(file);
+            }
+        }
+        console.log("DatabaseManager", "found evidence", claimId, evidenceFiles);
+        return evidenceFiles;
+    }
+
+    async addEvidence(claimId: number, file: File): Promise<boolean> {
+        console.log("add evidence", claimId, file);
+        const claimPath = `${this.fileStoragePath}/${claimId}`;
+        const filePath = `${claimPath}/${file.name}`;
+
+        const fileAlreadyExists = fs.existsSync(filePath);
+        if (fileAlreadyExists) {
+            console.error("DatabaseManager", "Add Evidence - File already exists", filePath);
+            return false;
+        }
+
+        const claimPathAlreadyExists = fs.existsSync(claimPath);
+        console.log("claimPathAlreadyExists", claimPathAlreadyExists);
+        if (!claimPathAlreadyExists) {
+            console.log("DatabaseManager", "Add Evidence - Claim path does not exist, create it", claimPath);
+            fs.mkdirSync(claimPath, { recursive: true });
+        }
+        try {
+            fs.writeFileSync(filePath, Buffer.from(await file.arrayBuffer()));
+            return true;
+        } catch (e) {
+            console.error("DatabaseManager", "Add Evidence - Error writing file", e);
+            return false;
+        }
+    }
+
+    removeEvidence(claimId: number, evidenceName: string): boolean {
+        const claimPath = `${this.fileStoragePath}/${claimId}`;
+        const filePath = `${claimPath}/${evidenceName}`;
+        const fileExists = fs.existsSync(filePath);
+        if (!fileExists) {
+            console.error("DatabaseManager", "Remove Evidence - File does not exist", filePath);
+            return false;
+        }
+        try {
+            fs.unlinkSync(filePath);
+            console.log("DatabaseManager", "Remove Evidence - File removed", filePath);
+            return true;
+        } catch (e) {
+            console.error("DatabaseManager", "Remove Evidence - Error removing file", e);
+            return false;
+        }
+    }
 
 }

@@ -49,19 +49,15 @@ export abstract class EmployeeRole {
 
     async submitClaim(claim: Claim): Promise<Claim | null> {
         if (claim.getStatus() !== ClaimStatus.DRAFT) {
+            console.error("Claim is not in draft status", claim.getId(), claim.getStatus());
             return null;
         }
-
-        const db = DatabaseManager.getInstance();
-        const result = db.updateClaimStatus(claim.getId(), ClaimStatus.PENDING);
-        if (!result) return null;
-
-        claim.setStatus(ClaimStatus.PENDING);
-        return claim;
-    }
-
-    async appealClaim(claim: Claim): Promise<Claim | null> {
-        if (claim.getStatus() !== ClaimStatus.DRAFT) {
+        if (claim.getAttemptCount() >= Claim.MAX_ATTEMPT_COUNT) {
+            console.error("Claim has reached maximum attempt count", claim.getId(), claim.getAttemptCount());
+            return null;
+        }
+        if (claim.getEmployeeId() !== this.userId) {
+            console.error("Claim does not belong to this employee", claim.getId(), claim.getEmployeeId(), this.userId);
             return null;
         }
 
@@ -73,6 +69,50 @@ export abstract class EmployeeRole {
 
         claim.setStatus(ClaimStatus.PENDING);
         claim.setAttemptCount(claim.getAttemptCount() + 1);
+        return claim;
+    }
+
+    async appealClaim(claim: Claim): Promise<Claim | null> {
+        if (claim.getStatus() !== ClaimStatus.REJECTED) {
+            console.error("Claim is not in rejected status", claim.getId(), claim.getStatus());
+            return null;
+        }
+        if (claim.getAttemptCount() >= Claim.MAX_ATTEMPT_COUNT) {
+            console.error("Claim has reached maximum attempt count", claim.getId(), claim.getAttemptCount());
+            return null;
+        }
+        if (claim.getEmployeeId() !== this.userId) {
+            console.error("Claim does not belong to this employee", claim.getId(), claim.getEmployeeId(), this.userId);
+            return null;
+        }
+
+        const db = DatabaseManager.getInstance();
+        const result = db.updateClaimStatus(claim.getId(), ClaimStatus.PENDING);
+        if (!result) return null;
+        const result2 = db.updateClaimAttemptCount(claim.getId(), claim.getAttemptCount() + 1);
+        if (!result2) return null;
+
+        claim.setStatus(ClaimStatus.PENDING);
+        claim.setAttemptCount(claim.getAttemptCount() + 1);
+        return claim;
+    }
+
+    async updateClaimAmount(claim: Claim, amount: number): Promise<Claim | null> {
+        if (claim.getStatus() !== ClaimStatus.DRAFT && claim.getStatus() !== ClaimStatus.PENDING) {
+            console.error("Claim is not in draft status", claim.getId(), claim.getStatus());
+            return null;
+        }
+        if (claim.getEmployeeId() !== this.userId) {
+            console.error("Claim does not belong to this employee", claim.getId(), claim.getEmployeeId(), this.userId);
+            return null;
+        }
+        const db = DatabaseManager.getInstance();
+        const result = await db.updateClaimAmount(claim.getId(), amount);
+        if (!result) {
+            console.error("Failed to update claim amount", claim.getId());
+            return null;
+        }
+        claim.setAmount(amount);
         return claim;
     }
 
