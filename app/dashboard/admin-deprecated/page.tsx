@@ -1,5 +1,9 @@
+// This is a deprecated page for admin actions. Initial Admin directory from dashboard.
+// The other one copied from (logged-in-screens)/admin/page.tsx
+//
+// This file will be deleted if noone wants it.
+
 import Link from 'next/link';
-import { useUser } from "@/app/contexts/UserContext";
 
 export default function AdminPage() {
   return (
@@ -7,17 +11,12 @@ export default function AdminPage() {
       <div className="mt-4">
         <h2 className="text-lg font-semibold">Admin Actions:</h2>
         <ul>
-            <li>
-                <Link href="/dashboard/admin/create-account" className="text-blue-500">
-                Create Account
-                </Link>
-            </li>
-            <li>
-                <Link href="/dashboard/admin/manage-accounts" className="text-blue-500">
-                    Manage Accounts
-                </Link>
-            </li>
-            {/* Add other admin actions like Register Accounts, etc. */}
+          <li>
+            <Link href="/admin/manage-accounts" className="text-blue-500">
+              Manage Accounts
+            </Link>
+          </li>
+          {/* Add other admin actions like Register Accounts, etc. */}
         </ul>
       </div>
     </div>
@@ -56,3 +55,4 @@ export default function AdminPage() {
 //     </div>
 //   );
 // }
+
