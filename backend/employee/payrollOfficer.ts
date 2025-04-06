@@ -19,6 +19,10 @@ export class PayrollOfficer extends EmployeeRole {
     }
 
     async reimburseExpense(claim: Claim): Promise<Claim | null> {
+        if (claim.getStatus() !== ClaimStatus.ACCEPTED) {
+            console.error("Claim is not in accepted status", claim.getId(), claim.getStatus());
+            return null;
+        }
         const db = DatabaseManager.getInstance();
         const update = await db.updateClaimStatus(claim.getId(), ClaimStatus.REIMBURSED);
         if (!update) {

@@ -414,7 +414,7 @@ export class DatabaseManager {
                 feedback: claim.feedback,
                 evidence: this.getClaimEvidence(claim.id)
             })
-        })
+        }).filter((claim) => claim.getStatus() == ClaimStatus.PENDING)
     }
 
     async getOwnClaimsByStatus(userId: number, status: ClaimStatus): Promise<Claim[]> {

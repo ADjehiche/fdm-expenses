@@ -1,6 +1,5 @@
 import { relations } from "drizzle-orm";
 import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { sql } from "drizzle-orm";
 
 export const testTable = sqliteTable("test", {
     id: int().primaryKey({autoIncrement:true}),
