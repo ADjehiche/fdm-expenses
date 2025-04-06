@@ -1,4 +1,4 @@
-enum StatusCode {
+export enum StatusCode {
     SUCCESS = 1000,
     INVALID_CLAIM_STATUS = 1001,
     EVIDENCE_SAVE_FAIL = 1002,

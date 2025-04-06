@@ -38,6 +38,7 @@ export default function dashboardPage() {
   const pendingClaims = getPendingClaims();
   return (
     <div className="space-y-6 text-black">
+
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
         <Button asChild className="bg-[#c3fa04] hover:bg-[#c3fa04]/90">

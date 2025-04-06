@@ -189,7 +189,7 @@ const payrollReimburseClaim = async (
 
   console.log(
     "Payroll Officer Claim Insert successful, claim:",
-    `id: ${reimbursedClaim.getId()}, amount: ${reimbursedClaim.getAmount()} status: ${reimbursedClaim.getStatus()}`
+    `id: ${reimbursedClaim.getId()}, amount: ${reimbursedClaim.getAmount()} status: ${payrollOfficerRole.getStatus()}`
   );
 
   return reimbursedClaim;
