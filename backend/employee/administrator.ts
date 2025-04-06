@@ -43,6 +43,13 @@ export class Administrator extends EmployeeRole {
             return null;
         }
 
+        if (newEmployeeClassification == EmployeeClassification.External && newEmployeeRole != EmployeeType.Consultant
+            || newEmployeeClassification == EmployeeClassification.Internal && newEmployeeRole == EmployeeType.Consultant
+        ) {
+            console.error("Invalid employee classification and type combination", newEmployeeClassification, newEmployeeRole);
+            return null;
+        }
+
         const newUser = new User({
             id,
             createdAt: new Date(),
@@ -82,9 +89,13 @@ export class Administrator extends EmployeeRole {
         return await db.deleteAccount(userId);
     }
 
-    async changeRole(userId: number, role: EmployeeType): Promise<boolean> {
+    /**
+     * Changes employee role.
+     * If switching employee classification, use `changeEmployeesClassification` first
+     */
+    async changeRole(userId: number, newRole: EmployeeType): Promise<boolean> {
         const db = DatabaseManager.getInstance();
-        return db.setEmployeeRole(userId, role);
+        return db.setEmployeeRole(userId, newRole);
     }
 
     async getAccounts(): Promise<User[]> {
@@ -105,5 +116,14 @@ export class Administrator extends EmployeeRole {
     async changeEmployeesEmail(employeeUserId: number, email: string) {
         const db = DatabaseManager.getInstance();
         return db.setEmployeeEmail(employeeUserId, email);
+    }
+
+    /**
+     * Changes the employee's classification between internal and external.
+     * Use this before using `changeRole` if switching employee classification
+     */
+    async changeEmployeesClassification(employeeUserId: number, newClassification: EmployeeClassification) {
+        const db = DatabaseManager.getInstance();
+        return db.setEmployeeClassification(employeeUserId, newClassification);
     }
 }

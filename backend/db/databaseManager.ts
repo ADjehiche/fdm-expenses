@@ -282,6 +282,50 @@ export class DatabaseManager {
         return createLineManager.length === 1;
     }
 
+    /**
+     * Sets the employee classifcation (Internal / External) for the user.
+     * If the user already has the same classification, it will not update.
+     * 
+     * If switching to internal, the employee's role will be set to general staff.
+     * If switching to external, the employee's role will be set to consultant.
+     */
+    async setEmployeeClassification(employeeUserId: number, newClassification: EmployeeClassification): Promise<boolean> {
+        const user = await this.getAccount(employeeUserId);
+        if (!user) {
+            console.error("DatabaseManager", "Failed to get user for employeeUserId", employeeUserId);
+            return false;
+        }
+
+        if (user.getEmployeeClassification() == newClassification) {
+            console.warn("DatabaseManager", "User already has the same classification", user.getEmployeeClassification());
+            return false;
+        }
+
+        if (newClassification == EmployeeClassification.Internal) {
+            const updateUser = await db.update(usersTable).set({
+                employeeClassification: EmployeeClassification.Internal,
+                employeeRole: EmployeeType.GeneralStaff
+            }).where(eq(usersTable.id, employeeUserId)).returning();
+            if (updateUser.length === 0) {
+                return false;
+            }
+        } else {
+            const updateUser = await db.update(usersTable).set({
+                employeeClassification: EmployeeClassification.External,
+            }).where(eq(usersTable.id, employeeUserId)).returning();
+            if (updateUser.length === 0) {
+                return false;
+            }
+            // call setEmployeeRole when switching to external to delete any data (line manager)
+            const changeEmployeeRole = await this.setEmployeeRole(updateUser[0].id, EmployeeType.Consultant);
+            if (!changeEmployeeRole) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     async setEmployeeRegion(employeeUserId: number, region: string): Promise<boolean> {
         const updateUser = await db.update(usersTable).set({
             region: region
@@ -302,19 +346,33 @@ export class DatabaseManager {
         return updateUser.length === 1;
     }
 
-    async setEmployeeRole(employeeUserId: number, role: EmployeeType): Promise<boolean> {
+    /**
+     * Sets the employee role for the user.
+     * If the user already has the same role, it will not update.
+     * 
+     * This method will not switch the employee classification from internal to external, and will not switch
+     * between internal and external roles. In this case, it will return false and you should call `setEmployeeClassification` first
+     * before calling this method.
+     */
+    async setEmployeeRole(employeeUserId: number, newRole: EmployeeType): Promise<boolean> {
         const user = await this.getAccount(employeeUserId);
         if (!user) {
             console.error("DatabaseManager", "Failed to get user for employeeUserId", employeeUserId);
             return false;
         }
 
-        if (user.getEmployeeRole().getType() === role) {
+        if (user.getEmployeeRole().getType() === newRole) {
             console.warn("DatabaseManager", "User already has the same role", user.getEmployeeRole().getType());
             return false;
         }
 
-        if (user.getEmployeeRole().getType() == "Line Manager") {
+        if (user.getEmployeeClassification() == EmployeeClassification.Internal && newRole == EmployeeType.Consultant
+            || user.getEmployeeClassification() == EmployeeClassification.External && newRole != EmployeeType.Consultant) {
+            console.error("DatabaseManager", "Cannot switch employee classification from internal to external. Use setEmployeeClassification first");
+            return false;
+        }
+
+        if (user.getEmployeeRole().getType() == EmployeeType.LineManager) {
             console.log("DatabaseManager", "Deleting line manager for user", employeeUserId);
             const deleteLineManager = await db.delete(lineManagersTable).where(eq(lineManagersTable.lineManagerId, employeeUserId)).returning();
             console.log("DatabaseManager", "deleteLineManager", deleteLineManager.length);
@@ -325,7 +383,7 @@ export class DatabaseManager {
         }
 
         const updateUser = await db.update(usersTable).set({
-            employeeRole: role
+            employeeRole: newRole
         }).where(eq(usersTable.id, employeeUserId)).returning();
         if (!updateUser) {
             return false;
