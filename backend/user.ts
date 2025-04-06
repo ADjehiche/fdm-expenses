@@ -1,4 +1,4 @@
-import { EmployeeRole } from "./employee/employeeRole";
+import { EmployeeRole, EmployeeType } from "./employee/employeeRole";
 
 export class User {
     private id: number;
@@ -47,6 +47,14 @@ export class User {
         this.employeeRole = newRole;
     }
 
+    /**
+     * Returns the type of user that the User currently is, eg Admin, LineManager, etc.
+     * @returns employee Type
+     */
+    public getEmployeeType() : EmployeeType {
+        return this.employeeRole.getType()
+    }
+
     public getEmployeeClassification(): EmployeeClassification {
         return this.employeeClassification;
     }
@@ -93,6 +101,6 @@ export class User {
 }
 
 export enum EmployeeClassification {
-    Internal = "Internal",
-    External = "External"
+    Internal="Internal",
+    External="External"
 }
