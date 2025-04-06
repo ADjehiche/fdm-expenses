@@ -1,13 +1,12 @@
 import { relations } from "drizzle-orm";
 import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { sql } from "drizzle-orm";
 
 export const usersTable = sqliteTable("users_table", {
     id: int().primaryKey({ autoIncrement: true }),
-    createdAt: int({ mode: "timestamp_ms" }).default(sql`strftime('%s','now') * 1000`).notNull(),
+    createdAt: int({ mode: "timestamp_ms" }).default(new Date(Date.now())).notNull(),
     firstName: text().notNull(),
     familyName: text().notNull(),
-    email: text().notNull().unique(),
+    email: text().notNull(),
     hashedPassword: text().notNull(),
     employeeClassification: text({ enum: ["Internal", "External"] }).notNull(),
     employeeRole: text({ enum: ["Line Manager", "Payroll Officer", "Administrator", "General Staff", "Consultant"] }).notNull(),
