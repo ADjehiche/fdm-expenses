@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "create-super-user": "npx tsx backend/db/utils/defaultData.ts",
-    "db-reset": "rm local.db && npx drizzle-kit push"
+    "db-reset": "rm local.db && npx drizzle-kit push",
+    "db":"npx drizzle-kit push"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
