@@ -453,7 +453,7 @@ export class DatabaseManager {
             attemptCount: result[0].attemptCount,
             status: result[0].status as ClaimStatus,
             feedback: result[0].feedback,
-            evidence: this.getClaimEvidence(result[0].id)
+            evidence: this.getAllClaimEvidence(result[0].id)
         })
     }
 
@@ -470,7 +470,7 @@ export class DatabaseManager {
                 attemptCount: claim.attemptCount,
                 status: claim.status as ClaimStatus,
                 feedback: claim.feedback,
-                evidence: this.getClaimEvidence(claim.id)
+                evidence: this.getAllClaimEvidence(claim.id)
             })
         }).filter((claim) => claim.getStatus() == ClaimStatus.PENDING)
     }
@@ -488,7 +488,7 @@ export class DatabaseManager {
                 attemptCount: row.attemptCount,
                 status: row.status as ClaimStatus,
                 feedback: row.feedback,
-                evidence: this.getClaimEvidence(row.id)
+                evidence: this.getAllClaimEvidence(row.id)
             })
         })
     }
@@ -527,13 +527,16 @@ export class DatabaseManager {
                 attemptCount: row.attemptCount,
                 status: row.status as ClaimStatus,
                 feedback: row.feedback,
-                evidence: this.getClaimEvidence(row.id)
+                evidence: this.getAllClaimEvidence(row.id)
             })
         })
     }
 
 
-    getClaimEvidence(claimId: number): string[] {
+    /**
+     * Gets list of evidence file names for a claim
+     */
+    getAllClaimEvidence(claimId: number): string[] {
         const claimPath = `${this.fileStoragePath}/${claimId}`;
 
         const claimPathExists = fs.existsSync(claimPath);
@@ -555,6 +558,19 @@ export class DatabaseManager {
         }
         console.log("DatabaseManager", "found evidence", claimId, evidenceFiles);
         return evidenceFiles;
+    }
+
+    getClaimEvidenceFile(claimId: number, evidenceName: string): File | null {
+        const evidencePath = `${this.fileStoragePath}/${claimId}/${evidenceName}`;
+
+        const evidencePathExists = fs.existsSync(evidencePath);
+        if (!evidencePathExists) {
+            console.error("DatabaseManager", "Get Claim Evidence - Evidence path does not exist", evidencePath);
+            return null;
+        }
+
+        const evidenceFile = fs.readFileSync(evidencePath);
+        return new File([evidenceFile], evidenceName);
     }
 
     async addEvidence(claimId: number, file: File): Promise<boolean> {
