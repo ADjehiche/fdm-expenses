@@ -32,7 +32,7 @@ export class Administrator extends EmployeeRole {
         plainPassword: string,
         region: string,
         classification?: EmployeeClassification,
-        role?: EmployeeRole
+        role?: EmployeeType
     }): Promise<User | null> {
         const newUser = new User({
             id,
@@ -42,13 +42,23 @@ export class Administrator extends EmployeeRole {
             email,
             employeeClassification: classification ?? EmployeeClassification.Internal,
             region: region,
-            employeeRole: role ?? new GeneralStaff(-1)
+            employeeRole: new GeneralStaff(-1)
         })
 
         const db = DatabaseManager.getInstance();
         if (!db) return null;
 
-        return await db.addAccount(newUser, plainPassword);
+        if (!role || role == EmployeeType.GeneralStaff) {
+            // if role is not given, the default is GeneralStaff so add it to the database
+            return await db.addAccount(newUser, plainPassword);
+        }
+
+        const changeRole = await this.changeRole(newUser.getId(), role);
+        if (!changeRole) {
+            console.error("Failed to change role");
+            return null;
+        }
+        return await db.getAccount(newUser.getId());
     }
 
     async deleteAccount(userId: number): Promise<boolean> {
