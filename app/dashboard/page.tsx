@@ -39,13 +39,6 @@ export default function dashboardPage() {
   return (
     <div className="space-y-6 text-black">
 
-      <Button asChild className="bg-[#c3fa04] hover:bg-[#c3fa04]/90">
-        <Link href="/dashboard/admin">
-          <Plus className="mr-2 h-4 2-4" />
-          Administrator View
-        </Link>
-      </Button>
-      
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
         <Button asChild className="bg-[#c3fa04] hover:bg-[#c3fa04]/90">
