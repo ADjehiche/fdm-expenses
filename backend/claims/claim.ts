@@ -92,6 +92,9 @@ export class Claim {
 
     public getEmployeeId(): number { return this.employeeId; }
     public setEmployeeId(employeeId: number): void { this.employeeId = employeeId; }
+
+    public setLastUpdated(lastUpdated: Date): void { this.lastUpdated = lastUpdated; }
+    public incrementAttemptCount(): void { this.attemptCount++; }
 }
 
 export enum ClaimStatus {
