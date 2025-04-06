@@ -1,33 +1,91 @@
+"use client"
 import React from 'react';
-import { User } from '../../../../backend/user';  // Adjust the path accordingly
+import { SerializableUser } from './page';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Users, Edit, Trash2 } from "lucide-react";
 
 // Define prop types for EmployeeList
 interface EmployeeListProps {
-  users: User[];
+  users: SerializableUser[];
 }
 
 // Component to display a list of employees
 const EmployeeList: React.FC<EmployeeListProps> = ({ users }) => {
   return (
-    <div className="mt-4">
-      <h2 className="text-lg font-semibold">Employees List:</h2>
-      <ul className="space-y-2">
+    <Card className="border-0 shadow-md w-full mt-6">
+      <CardHeader className="bg-fdm-blue rounded-t-lg">
+        <CardTitle className="flex items-center">
+          <Users className="mr-2 h-5 w-5 text-black" />
+          Employee Accounts
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-6">
         {users.length === 0 ? (
-          <p>No users found.</p>
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No employee accounts found.</p>
+          </div>
         ) : (
-          users.map((user) => (
-            <li key={user.getId()} className="border p-2 rounded-md">
-              <h3 className="font-semibold">
-                {user.getFirstName()} {user.getFamilyName()}
-              </h3>
-              <p>Email: {user.getEmail()}</p>
-              <p>Role: {JSON.parse(JSON.stringify(user.getEmployeeRole())).employeeType}</p> {/*user.getEmployeeRole returns an object that cant be turned into a string, therefore it must be stringified and parsed to access the employeetype attribute*/}
-              <p>Region: {user.getRegion()}</p>
-            </li>
-          ))
+          <Table>
+            <TableCaption>List of all employee accounts in the system</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Region</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">{user.id}</TableCell>
+                  <TableCell>
+                    {user.firstName} {user.familyName}
+                  </TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    {user.employeeRole.employeeType}
+                  </TableCell>
+                  <TableCell>{user.region}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2 ">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 bg-white" 
+                        title="Edit user"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 text-red-500 hover:text-red-600 bg-white" 
+                        title="Delete user"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
-      </ul>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

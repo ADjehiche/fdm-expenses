@@ -30,10 +30,11 @@ export default function DashboardLayout({
   role = "employee",
 }: DashboardLayoutProps) {
     const { user, loading } = useUser();
-  
     if (loading) return <div>Loading...</div>;
     if (!user) return <div>Not logged in</div>;
-  return (
+    const userRole = user.employeeRoleType;
+    console.log(userRole);
+    return (
     <div className="min-h-screen flex flex-col">
       <header className="bg-fdm-blue text-white top-0 z-10">
         <div className="container mx-auto px-4 py-6 flex justify-between items-center">
@@ -107,7 +108,7 @@ export default function DashboardLayout({
               label="Rejected Claims"
             />
 
-            {(role === "lineManager" || role === "administrator") && (
+            {(userRole === "lineManager") && (
               <>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2 px-3">
                   Management
@@ -125,7 +126,7 @@ export default function DashboardLayout({
               </>
             )}
 
-            {(role === "payrollOfficer" || role === "administrator") && (
+            {(userRole === "payrollOfficer") && (
               <>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2 px-3">
                   Payroll
@@ -138,20 +139,20 @@ export default function DashboardLayout({
               </>
             )}
 
-            {role === "administrator" && (
+            {userRole === "Administrator" && (
               <>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2 px-3">
                   Administration
                 </p>
                 <NavItem
-                  href="/dashboard/admin/users"
+                  href="/dashboard/admin/manage-accounts"
                   icon={<Users className="h-4 w-4" />}
-                  label="User Management"
+                  label="Manage Accounts"
                 />
                 <NavItem
-                  href="/dashboard/admin/settings"
-                  icon={<Settings className="h-4 w-4" />}
-                  label="System Settings"
+                  href="/dashboard/admin/create-account"
+                  icon={<Users className="h-4 w-4" />}
+                  label="Create Account"
                 />
               </>
             )}

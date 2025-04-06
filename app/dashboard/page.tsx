@@ -39,13 +39,6 @@ export default function dashboardPage() {
   return (
     <div className="space-y-6 text-black">
 
-      <Button asChild className="bg-[#c3fa04] hover:bg-[#c3fa04]/90">
-        <Link href="/dashboard/admin">
-          <Plus className="mr-2 h-4 2-4" />
-          Administrator View
-        </Link>
-      </Button>
-      
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
         <Button asChild className="bg-[#c3fa04] hover:bg-[#c3fa04]/90">
@@ -87,10 +80,10 @@ export default function dashboardPage() {
         />
       </div>
 
-      <Tabs>
+      <Tabs defaultValue="recent">
         <TabsList>
           <TabsTrigger value="recent">Recent Claims</TabsTrigger>
-          <TabsTrigger value="pendig">Pending Claims</TabsTrigger>
+          <TabsTrigger value="pending">Pending Claims</TabsTrigger>
         </TabsList>
         <TabsContent value="recent" className="space-y-4">
           <Card>
@@ -151,7 +144,7 @@ interface StatsCardProps {
 
 function StatsCard({ title, value, description, icon, href }: StatsCardProps) {
   return (
-    <Card>
+    <Card className="border border-gray-200 border-solid">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         {icon}
