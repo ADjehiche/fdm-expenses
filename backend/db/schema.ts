@@ -53,31 +53,3 @@ export const claimsTable = sqliteTable("claims_table", {
     createdAt: int({ mode: "timestamp_ms" }).default(new Date(Date.now())).notNull(),
     lastUpdated: int({ mode: "timestamp_ms" }).default(new Date(Date.now())).notNull(),
 });
-
-
-// export const evidenceTable = sqliteTable("evidence_table", {
-//     id: int().primaryKey({ autoIncrement: true }),
-
-// });
-
-
-//   private addEvidenceTable() {
-//     // // add evidence table
-//     // this.addTable(
-//     //   `evidence`,
-//     //   `CREATE TABLE IF NOT EXISTS evidence (
-//     //     id INTEGER PRIMARY KEY,
-//     //     claim_id INTEGER,
-//     //     datatype TEXT,
-//     //     data BLOB,
-//     //     FOREIGN KEY(claim_id) REFERENCES claim(id),
-//     //   )`
-//     // );
-//     // const evidenceRows : {} = {
-//     //   1 : {
-//     //     "claim_id" : 1,
-//     //     "datatype" : "text",
-//     //     "data" : "open file xyz"
-//     //   },
-//     // }
-//   }
