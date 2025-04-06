@@ -134,9 +134,7 @@ const lineManagerApproveClaim = async (
       `Line Manager Claims Insert failed length: ${managersClaims.length}`
     );
   }
-  const acceptedClaim = await lineManagerRole.approveClaim(
-    claimToAccept
-  );
+  const acceptedClaim = await lineManagerRole.approveClaim(claimToAccept);
   if (!acceptedClaim) {
     throw new Error("Line Manager Accepted Claim Insert failed");
   }
@@ -172,6 +170,29 @@ const lineManagerRejectClaim = async (
   );
 
   return claimToReject;
+};
+
+const payrollReimburseClaim = async (
+  payrollOfficer: User,
+  claimToReimburse: Claim
+): Promise<Claim> => {
+  const payrollOfficerRole = await payrollOfficer.getEmployeeRole() as PayrollOfficer
+  if (!payrollOfficerRole) {
+    throw new Error("Payroll Officer Claim Insert failed");
+  }
+
+
+  const reimbursedClaim = await payrollOfficerRole.reimburseExpense(claimToReimburse);
+  if (!reimbursedClaim) {
+    throw new Error(`Payroll Officer ${payrollOfficer.getFirstName()} cannot reimburse claim ${claimToReimburse.getId()}`)
+  }
+
+  console.log(
+    "Payroll Officer Claim Insert successful, claim:",
+    `id: ${reimbursedClaim.getId()}, amount: ${reimbursedClaim.getAmount()} status: ${reimbursedClaim.getStatus()}`
+  );
+
+  return reimbursedClaim;
 };
 
 export const createDraftClaim = async (emp: User): Promise<Claim> => {
@@ -215,7 +236,24 @@ export const createRejectedClaim = async (
   lineManager: User
 ): Promise<Claim> => {
   const claimToReject = await createPendingClaim(emp, updatedValue);
-  return lineManagerRejectClaim(lineManager, claimToReject, "Value requested too high, receipt says 50");
+  return lineManagerRejectClaim(
+    lineManager,
+    claimToReject,
+    "Value requested too high, receipt says 50"
+  );
 };
 
-export const createReimbusedClaim = async () => {};
+export const createReimbusedClaim = async (
+  emp: User,
+  updatedValue: number,
+  lineManager: User,
+  payrollOfficer: User
+): Promise<Claim> => {
+  const claimToReimburse = await createApprovedClaim(
+    emp,
+    updatedValue,
+    lineManager
+  );
+
+  return claimToReimburse;
+};
