@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "db":"npx drizzle-kit push",
+    "show-db": "npx drizzle-kit studio",
     "create-super-user": "npx tsx backend/db/utils/superAdminAccount.ts",
     "db-reset": "rm local.db && npx drizzle-kit push && npx tsx backend/db/utils/defaultData.ts && npx tsx backend/db/utils/superAdminAccount.ts"
   },

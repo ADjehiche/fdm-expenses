@@ -55,7 +55,18 @@ export class Claim {
         this.status = newStatus;
     }
 
-    public getEvidence(): Array<string> { return this.evidence; }
+    public getAllEvidence(): Array<string> { return this.evidence; }
+    public getEvidenceFile(evidenceName: string): File | null {
+        const db = DatabaseManager.getInstance();
+
+        const evidenceNameInClaim = this.evidence.find(evidence => evidence === evidenceName);
+        if (!evidenceNameInClaim) {
+            console.error("ERROR - Evidence not found in claim", evidenceName, this.id);
+            return null;
+        }
+
+        return db.getClaimEvidenceFile(this.id, evidenceName);
+    }
     public async addEvidence(evidenceFile: File): Promise<boolean> {
         if (this.status !== ClaimStatus.DRAFT && this.status !== ClaimStatus.PENDING) {
             console.error("ERROR - Claim has to be in draft state to add evidence", this.id, this.status);

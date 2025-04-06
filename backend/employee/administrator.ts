@@ -3,6 +3,7 @@ import { EmployeeClassification } from "../user";
 import { GeneralStaff } from "./generalStaff";
 import { EmployeeRole, EmployeeType } from "./employeeRole";
 import { DatabaseManager } from "../db/databaseManager";
+import { getEmployeeClassification, getEmployeeType } from "./utils";
 
 export class Administrator extends EmployeeRole {
     private employeeType: EmployeeType = EmployeeType.Administrator;
@@ -31,16 +32,31 @@ export class Administrator extends EmployeeRole {
         email: string,
         plainPassword: string,
         region: string,
-        classification?: EmployeeClassification,
-        role?: EmployeeType
+        classification?: string,
+        role?: string
     }): Promise<User | null> {
+        const newEmployeeClassification = classification ? getEmployeeClassification(classification) : EmployeeClassification.Internal;
+        const newEmployeeRole = role ? getEmployeeType(role) : EmployeeType.GeneralStaff;
+
+        if (!newEmployeeClassification || !newEmployeeRole) {
+            console.error("Invalid employee classification or type", classification, role);
+            return null;
+        }
+
+        if (newEmployeeClassification == EmployeeClassification.External && newEmployeeRole != EmployeeType.Consultant
+            || newEmployeeClassification == EmployeeClassification.Internal && newEmployeeRole == EmployeeType.Consultant
+        ) {
+            console.error("Invalid employee classification and type combination", newEmployeeClassification, newEmployeeRole);
+            return null;
+        }
+
         const newUser = new User({
             id,
             createdAt: new Date(),
             firstName,
             familyName,
             email,
-            employeeClassification: classification ?? EmployeeClassification.Internal,
+            employeeClassification: newEmployeeClassification,
             region: region,
             employeeRole: new GeneralStaff(-1)
         })
@@ -48,17 +64,24 @@ export class Administrator extends EmployeeRole {
         const db = DatabaseManager.getInstance();
         if (!db) return null;
 
-        if (!role || role == EmployeeType.GeneralStaff) {
-            // if role is not given, the default is GeneralStaff so add it to the database
-            return await db.addAccount(newUser, plainPassword);
-        }
+        const newAccount = await db.addAccount(newUser, plainPassword);
 
-        const changeRole = await this.changeRole(newUser.getId(), role);
-        if (!changeRole) {
-            console.error("Failed to change role");
+        if (!newAccount) {
+            console.error("Failed to create new account");
             return null;
         }
-        return await db.getAccount(newUser.getId());
+
+        if (newEmployeeRole == EmployeeType.GeneralStaff) {
+            // if role is not given, the default is GeneralStaff so add it to the database
+            return newAccount;
+        }
+
+        const changeRole = await this.changeRole(newAccount.getId(), newEmployeeRole);
+        if (!changeRole) {
+            console.error("Failed to change role");
+            return newAccount;
+        }
+        return await db.getAccount(newAccount.getId());
     }
 
     async deleteAccount(userId: number): Promise<boolean> {
@@ -66,9 +89,13 @@ export class Administrator extends EmployeeRole {
         return await db.deleteAccount(userId);
     }
 
-    async changeRole(userId: number, role: EmployeeType): Promise<boolean> {
+    /**
+     * Changes employee role.
+     * If switching employee classification, use `changeEmployeesClassification` first
+     */
+    async changeRole(userId: number, newRole: EmployeeType): Promise<boolean> {
         const db = DatabaseManager.getInstance();
-        return db.setEmployeeRole(userId, role);
+        return db.setEmployeeRole(userId, newRole);
     }
 
     async getAccounts(): Promise<User[]> {
@@ -89,5 +116,14 @@ export class Administrator extends EmployeeRole {
     async changeEmployeesEmail(employeeUserId: number, email: string) {
         const db = DatabaseManager.getInstance();
         return db.setEmployeeEmail(employeeUserId, email);
+    }
+
+    /**
+     * Changes the employee's classification between internal and external.
+     * Use this before using `changeRole` if switching employee classification
+     */
+    async changeEmployeesClassification(employeeUserId: number, newClassification: EmployeeClassification) {
+        const db = DatabaseManager.getInstance();
+        return db.setEmployeeClassification(employeeUserId, newClassification);
     }
 }

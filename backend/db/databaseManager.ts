@@ -282,6 +282,50 @@ export class DatabaseManager {
         return createLineManager.length === 1;
     }
 
+    /**
+     * Sets the employee classifcation (Internal / External) for the user.
+     * If the user already has the same classification, it will not update.
+     * 
+     * If switching to internal, the employee's role will be set to general staff.
+     * If switching to external, the employee's role will be set to consultant.
+     */
+    async setEmployeeClassification(employeeUserId: number, newClassification: EmployeeClassification): Promise<boolean> {
+        const user = await this.getAccount(employeeUserId);
+        if (!user) {
+            console.error("DatabaseManager", "Failed to get user for employeeUserId", employeeUserId);
+            return false;
+        }
+
+        if (user.getEmployeeClassification() == newClassification) {
+            console.warn("DatabaseManager", "User already has the same classification", user.getEmployeeClassification());
+            return false;
+        }
+
+        if (newClassification == EmployeeClassification.Internal) {
+            const updateUser = await db.update(usersTable).set({
+                employeeClassification: EmployeeClassification.Internal,
+                employeeRole: EmployeeType.GeneralStaff
+            }).where(eq(usersTable.id, employeeUserId)).returning();
+            if (updateUser.length === 0) {
+                return false;
+            }
+        } else {
+            const updateUser = await db.update(usersTable).set({
+                employeeClassification: EmployeeClassification.External,
+            }).where(eq(usersTable.id, employeeUserId)).returning();
+            if (updateUser.length === 0) {
+                return false;
+            }
+            // call setEmployeeRole when switching to external to delete any data (line manager)
+            const changeEmployeeRole = await this.setEmployeeRole(updateUser[0].id, EmployeeType.Consultant);
+            if (!changeEmployeeRole) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     async setEmployeeRegion(employeeUserId: number, region: string): Promise<boolean> {
         const updateUser = await db.update(usersTable).set({
             region: region
@@ -302,19 +346,33 @@ export class DatabaseManager {
         return updateUser.length === 1;
     }
 
-    async setEmployeeRole(employeeUserId: number, role: EmployeeType): Promise<boolean> {
+    /**
+     * Sets the employee role for the user.
+     * If the user already has the same role, it will not update.
+     * 
+     * This method will not switch the employee classification from internal to external, and will not switch
+     * between internal and external roles. In this case, it will return false and you should call `setEmployeeClassification` first
+     * before calling this method.
+     */
+    async setEmployeeRole(employeeUserId: number, newRole: EmployeeType): Promise<boolean> {
         const user = await this.getAccount(employeeUserId);
         if (!user) {
             console.error("DatabaseManager", "Failed to get user for employeeUserId", employeeUserId);
             return false;
         }
 
-        if (user.getEmployeeRole().getType() === role) {
+        if (user.getEmployeeRole().getType() === newRole) {
             console.warn("DatabaseManager", "User already has the same role", user.getEmployeeRole().getType());
             return false;
         }
 
-        if (user.getEmployeeRole().getType() == "Line Manager") {
+        if (user.getEmployeeClassification() == EmployeeClassification.Internal && newRole == EmployeeType.Consultant
+            || user.getEmployeeClassification() == EmployeeClassification.External && newRole != EmployeeType.Consultant) {
+            console.error("DatabaseManager", "Cannot switch employee classification from internal to external. Use setEmployeeClassification first");
+            return false;
+        }
+
+        if (user.getEmployeeRole().getType() == EmployeeType.LineManager) {
             console.log("DatabaseManager", "Deleting line manager for user", employeeUserId);
             const deleteLineManager = await db.delete(lineManagersTable).where(eq(lineManagersTable.lineManagerId, employeeUserId)).returning();
             console.log("DatabaseManager", "deleteLineManager", deleteLineManager.length);
@@ -325,7 +383,7 @@ export class DatabaseManager {
         }
 
         const updateUser = await db.update(usersTable).set({
-            employeeRole: role
+            employeeRole: newRole
         }).where(eq(usersTable.id, employeeUserId)).returning();
         if (!updateUser) {
             return false;
@@ -395,7 +453,7 @@ export class DatabaseManager {
             attemptCount: result[0].attemptCount,
             status: result[0].status as ClaimStatus,
             feedback: result[0].feedback,
-            evidence: this.getClaimEvidence(result[0].id)
+            evidence: this.getAllClaimEvidence(result[0].id)
         })
     }
 
@@ -412,7 +470,7 @@ export class DatabaseManager {
                 attemptCount: claim.attemptCount,
                 status: claim.status as ClaimStatus,
                 feedback: claim.feedback,
-                evidence: this.getClaimEvidence(claim.id)
+                evidence: this.getAllClaimEvidence(claim.id)
             })
         }).filter((claim) => claim.getStatus() == ClaimStatus.PENDING)
     }
@@ -430,7 +488,7 @@ export class DatabaseManager {
                 attemptCount: row.attemptCount,
                 status: row.status as ClaimStatus,
                 feedback: row.feedback,
-                evidence: this.getClaimEvidence(row.id)
+                evidence: this.getAllClaimEvidence(row.id)
             })
         })
     }
@@ -469,13 +527,16 @@ export class DatabaseManager {
                 attemptCount: row.attemptCount,
                 status: row.status as ClaimStatus,
                 feedback: row.feedback,
-                evidence: this.getClaimEvidence(row.id)
+                evidence: this.getAllClaimEvidence(row.id)
             })
         })
     }
 
 
-    getClaimEvidence(claimId: number): string[] {
+    /**
+     * Gets list of evidence file names for a claim
+     */
+    getAllClaimEvidence(claimId: number): string[] {
         const claimPath = `${this.fileStoragePath}/${claimId}`;
 
         const claimPathExists = fs.existsSync(claimPath);
@@ -497,6 +558,19 @@ export class DatabaseManager {
         }
         console.log("DatabaseManager", "found evidence", claimId, evidenceFiles);
         return evidenceFiles;
+    }
+
+    getClaimEvidenceFile(claimId: number, evidenceName: string): File | null {
+        const evidencePath = `${this.fileStoragePath}/${claimId}/${evidenceName}`;
+
+        const evidencePathExists = fs.existsSync(evidencePath);
+        if (!evidencePathExists) {
+            console.error("DatabaseManager", "Get Claim Evidence - Evidence path does not exist", evidencePath);
+            return null;
+        }
+
+        const evidenceFile = fs.readFileSync(evidencePath);
+        return new File([evidenceFile], evidenceName);
     }
 
     async addEvidence(claimId: number, file: File): Promise<boolean> {

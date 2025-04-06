@@ -130,20 +130,20 @@ async function TestClaims() {
     if (!result) {
         throw new Error("Claim evidence not added");
     }
-    console.log("Claim evidence added", `evidence: ${newClaim.getEvidence()}`);
+    console.log("Claim evidence added", `evidence: ${newClaim.getAllEvidence()}`);
 
     const claimFromDb2 = await dbManager.getClaim(newClaim.getId());
     if (!claimFromDb2) {
         throw new Error("Claim not found in db");
     }
     console.log("Claim found in db", `id: ${claimFromDb2.getId()}`);
-    if (claimFromDb2.getEvidence().length !== 1) {
+    if (claimFromDb2.getAllEvidence().length !== 1) {
         throw new Error("Claim evidence not found in db");
     }
-    if (claimFromDb2.getEvidence()[0] !== testFile.name) {
+    if (claimFromDb2.getAllEvidence()[0] !== testFile.name) {
         throw new Error("Claim evidence name not correct");
     }
-    console.log("Claim evidence name correct", `evidence: ${claimFromDb2.getEvidence()}`);
+    console.log("Claim evidence name correct", `evidence: ${claimFromDb2.getAllEvidence()}`);
 
     const employeeDraftClaims = await employee.getEmployeeRole().getClaimsByStatus(ClaimStatus.DRAFT);
     if (!employeeDraftClaims || employeeDraftClaims.length !== 1) {
