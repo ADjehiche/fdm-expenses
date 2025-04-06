@@ -21,14 +21,18 @@ export class Administrator extends EmployeeRole {
         familyName,
         email,
         plainPassword,
-        region
+        region,
+        classification,
+        role
     }: {
         id: number,
         firstName: string,
         familyName: string,
         email: string,
         plainPassword: string,
-        region: string
+        region: string,
+        classification?: EmployeeClassification,
+        role?: EmployeeRole
     }): Promise<User | null> {
         const newUser = new User({
             id,
@@ -36,9 +40,9 @@ export class Administrator extends EmployeeRole {
             firstName,
             familyName,
             email,
-            employeeClassification: EmployeeClassification.Internal,
+            employeeClassification: classification ?? EmployeeClassification.Internal,
             region: region,
-            employeeRole: new GeneralStaff(-1)
+            employeeRole: role ?? new GeneralStaff(-1)
         })
 
         const db = DatabaseManager.getInstance();
