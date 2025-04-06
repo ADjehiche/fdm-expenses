@@ -16,6 +16,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+// import { cn } from '@/lib/utils';
 import {
   Card,
   CardContent,
@@ -112,7 +113,7 @@ function CreateAccountPage() {
                         <FormControl>
                           <Input placeholder="First Name" {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-500 font-medium" />
                       </FormItem>
                     )}
                   />
@@ -126,7 +127,7 @@ function CreateAccountPage() {
                         <FormControl>
                           <Input placeholder="Family Name" {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-500 font-medium" />
                       </FormItem>
                     )}
                   />
@@ -141,7 +142,7 @@ function CreateAccountPage() {
                       <FormControl>
                         <Input type="email" placeholder="Email" {...field} />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-red-500 font-medium" />
                     </FormItem>
                   )}
                 />
@@ -155,7 +156,7 @@ function CreateAccountPage() {
                       <FormControl>
                         <Input type="password" placeholder="Password" {...field} />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-red-500 font-medium" />
                     </FormItem>
                   )}
                 />
@@ -170,7 +171,7 @@ function CreateAccountPage() {
                         <FormControl>
                           <Input placeholder="Region" {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-500 font-medium" />
                       </FormItem>
                     )}
                   />
@@ -191,7 +192,7 @@ function CreateAccountPage() {
                             <option value="External">External</option>
                           </select>
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-500 font-medium" />
                       </FormItem>
                     )}
                   />
@@ -217,7 +218,7 @@ function CreateAccountPage() {
                             <option value="LineManager">Line Manager</option>
                           </select>
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-500 font-medium" />
                       </FormItem>
                     )}
                   />
@@ -231,7 +232,7 @@ function CreateAccountPage() {
                         <FormControl>
                           <Input type="number" min="1" placeholder="Line Manager ID (if any)" {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-500 font-medium" />
                       </FormItem>
                     )}
                   />
