@@ -10,6 +10,11 @@ export class Claim {
     private status: ClaimStatus;
     private evidence: Array<string>;
     private feedback: string;
+
+    private accountName: string | null;
+    private accountNumber: string | null;
+    private sortCode: string | null;
+
     static MAX_ATTEMPT_COUNT = 3;
 
     constructor({
@@ -21,7 +26,10 @@ export class Claim {
         employeeId,
         status,
         evidence,
-        feedback
+        feedback,
+        accountName,
+        accountNumber,
+        sortCode
     }: {
         id: number,
         createdAt: Date,
@@ -31,7 +39,10 @@ export class Claim {
         lastUpdated: Date,
         status: ClaimStatus,
         evidence: Array<string>,
-        feedback: string
+        feedback: string,
+        accountName: string | null,
+        accountNumber: string | null,
+        sortCode: string | null
     }) {
         this.id = id;
         this.createdAt = createdAt;
@@ -42,6 +53,10 @@ export class Claim {
         this.status = status;
         this.evidence = evidence;
         this.feedback = feedback;
+
+        this.accountName = accountName;
+        this.accountNumber = accountNumber;
+        this.sortCode = sortCode;
     }
 
     public getId(): number {
@@ -54,6 +69,15 @@ export class Claim {
     public setStatus(newStatus: ClaimStatus): void {
         this.status = newStatus;
     }
+
+    public getAccountName(): string | null { return this.accountName; }
+    public setAccountName(accountName: string): void { this.accountName = accountName; }
+
+    public getAccountNumber(): string | null { return this.accountNumber; }
+    public setAccountNumber(accountNumber: string): void { this.accountNumber = accountNumber; }
+
+    public getSortCode(): string | null { return this.sortCode; }
+    public setSortCode(sortCode: string): void { this.sortCode = sortCode; }
 
     public getAllEvidence(): Array<string> { return this.evidence; }
     public getEvidenceFile(evidenceName: string): File | null {
@@ -79,14 +103,27 @@ export class Claim {
             return false;
         }
         this.evidence.push(evidenceFile.name);
+        const updateTime = db.updateClaimLastUpdated(this.id);
+        if (!updateTime) return false;
+        this.setLastUpdated(new Date());
         return true;
     }
-    public removeEvidence(evidencePath: string): void {
+    public async removeEvidence(evidencePath: string): Promise<boolean> {
         if (this.status !== ClaimStatus.DRAFT) {
             console.error("ERROR - Claim has to be in draft state to remove evidence", this.id, this.status);
-            return;
+            return false;
+        }
+        const db = DatabaseManager.getInstance();
+        const evidenceRemoved = await db.removeEvidence(this.id, evidencePath);
+        if (!evidenceRemoved) {
+            console.error("Failed to remove evidence", evidencePath);
+            return false;
         }
         this.evidence = this.evidence.filter(evidence => evidence !== evidencePath);
+        const updateTime = db.updateClaimLastUpdated(this.id);
+        if (!updateTime) return false;
+        this.setLastUpdated(new Date());
+        return true;
     }
 
     public getAmount(): number { return this.amount; }

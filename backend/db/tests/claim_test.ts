@@ -108,7 +108,7 @@ async function TestClaims() {
     }
     console.log("Administrator setEmployeesLineManager successful", `employeeId: ${employee.getId()}`, `lineManagerId: ${lineManager.getId()}`);
 
-    const newClaim = await employee.getEmployeeRole().createDraftClaim();
+    const newClaim = await employee.getEmployeeRole().createDraftClaim({});
     if (!newClaim) {
         throw new Error("Claim Insert failed");
     }

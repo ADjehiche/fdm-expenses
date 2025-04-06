@@ -2,7 +2,7 @@ import { relations } from "drizzle-orm";
 import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const testTable = sqliteTable("test", {
-    id: int().primaryKey({autoIncrement:true}),
+    id: int().primaryKey({ autoIncrement: true }),
 });
 
 export const usersTable = sqliteTable("users_table", {
@@ -44,12 +44,16 @@ export const claimsTable = sqliteTable("claims_table", {
     id: int().primaryKey({ autoIncrement: true }),
 
     employeeId: int().notNull().references(() => usersTable.id),
-    
+
     amount: int().default(0).notNull(),
     attemptCount: int().default(0).notNull(),
     status: text({ enum: ["Draft", "Pending", "Accepted", "Rejected", "Reimbursed"] }).default("Draft").notNull(),
     feedback: text().notNull(),
-    
+
+    accountName: text(),
+    accountNumber: text(),
+    sortCode: text(),
+
     createdAt: int({ mode: "timestamp_ms" }).default(new Date(Date.now())).notNull(),
     lastUpdated: int({ mode: "timestamp_ms" }).default(new Date(Date.now())).notNull(),
 });

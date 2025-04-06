@@ -30,6 +30,7 @@ export class PayrollOfficer extends EmployeeRole {
             return null;
         }
         claim.setStatus(ClaimStatus.REIMBURSED);
+        claim.setLastUpdated(new Date());
         return claim;
     }
 }

@@ -43,6 +43,7 @@ export class LineManager extends EmployeeRole {
         const result = await db.updateClaimStatus(claim.getId(), ClaimStatus.ACCEPTED);
         if (!result) return null;
         claim.setStatus(ClaimStatus.ACCEPTED);
+        claim.setLastUpdated(new Date());
         return claim;
     }
 
@@ -59,6 +60,7 @@ export class LineManager extends EmployeeRole {
 
         claim.setStatus(ClaimStatus.REJECTED);
         claim.setFeedback(feedback);
+        claim.setLastUpdated(new Date());
         return claim;
     }
 

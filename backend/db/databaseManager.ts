@@ -414,7 +414,10 @@ export class DatabaseManager {
             attemptCount: insert[0].attemptCount,
             status: insert[0].status as ClaimStatus,
             feedback: insert[0].feedback,
-            evidence: []
+            evidence: [],
+            accountName: insert[0].accountName,
+            accountNumber: insert[0].accountNumber,
+            sortCode: insert[0].sortCode
         });
     }
 
@@ -426,6 +429,8 @@ export class DatabaseManager {
         if (!result) {
             return false;
         }
+        const updateTime = await this.updateClaimLastUpdated(claimId);
+        if (!updateTime) return false;
         return result.length === 1;
     }
 
@@ -437,6 +442,8 @@ export class DatabaseManager {
         if (!result) {
             return false;
         }
+        const updateTime = await this.updateClaimLastUpdated(claimId);
+        if (!updateTime) return false;
         return result.length === 1;
     }
 
@@ -453,7 +460,10 @@ export class DatabaseManager {
             attemptCount: result[0].attemptCount,
             status: result[0].status as ClaimStatus,
             feedback: result[0].feedback,
-            evidence: this.getAllClaimEvidence(result[0].id)
+            evidence: this.getAllClaimEvidence(result[0].id),
+            accountName: result[0].accountName,
+            accountNumber: result[0].accountNumber,
+            sortCode: result[0].sortCode
         })
     }
 
@@ -470,7 +480,10 @@ export class DatabaseManager {
                 attemptCount: claim.attemptCount,
                 status: claim.status as ClaimStatus,
                 feedback: claim.feedback,
-                evidence: this.getAllClaimEvidence(claim.id)
+                evidence: this.getAllClaimEvidence(claim.id),
+                accountName: claim.accountName,
+                accountNumber: claim.accountNumber,
+                sortCode: claim.sortCode
             })
         }).filter((claim) => claim.getStatus() == ClaimStatus.PENDING)
     }
@@ -488,7 +501,10 @@ export class DatabaseManager {
                 attemptCount: row.attemptCount,
                 status: row.status as ClaimStatus,
                 feedback: row.feedback,
-                evidence: this.getAllClaimEvidence(row.id)
+                evidence: this.getAllClaimEvidence(row.id),
+                accountName: row.accountName,
+                accountNumber: row.accountNumber,
+                sortCode: row.sortCode
             })
         })
     }
@@ -500,6 +516,8 @@ export class DatabaseManager {
         if (!result) {
             return false;
         }
+        const updateTime = await this.updateClaimLastUpdated(claimId);
+        if (!updateTime) return false;
         return result.length === 1;
     }
 
@@ -510,6 +528,8 @@ export class DatabaseManager {
         if (!result) {
             return false;
         }
+        const updateTime = await this.updateClaimLastUpdated(claimId);
+        if (!updateTime) return false;
         return result.length === 1;
     }
 
@@ -527,9 +547,40 @@ export class DatabaseManager {
                 attemptCount: row.attemptCount,
                 status: row.status as ClaimStatus,
                 feedback: row.feedback,
-                evidence: this.getAllClaimEvidence(row.id)
+                evidence: this.getAllClaimEvidence(row.id),
+                accountName: row.accountName,
+                accountNumber: row.accountNumber,
+                sortCode: row.sortCode
             })
         })
+    }
+
+    async updateClaimBankDetails(claimId: number, newBankDetails: {
+        accountName: string | undefined,
+        accountNumber: string | undefined,
+        sortCode: string | undefined
+    }): Promise<boolean> {
+        const result = await db.update(claimsTable).set({
+            accountName: newBankDetails.accountName,
+            accountNumber: newBankDetails.accountNumber,
+            sortCode: newBankDetails.sortCode
+        }).where(eq(claimsTable.id, claimId)).returning();
+        if (!result) {
+            return false;
+        }
+        const updateTime = await this.updateClaimLastUpdated(claimId);
+        if (!updateTime) return false;
+        return result.length === 1;
+    }
+
+    async updateClaimLastUpdated(claimId: number): Promise<boolean> {
+        const result = await db.update(claimsTable).set({
+            lastUpdated: new Date()
+        }).where(eq(claimsTable.id, claimId)).returning();
+        if (!result) {
+            return false;
+        }
+        return result.length === 1;
     }
 
 
@@ -592,6 +643,8 @@ export class DatabaseManager {
         }
         try {
             fs.writeFileSync(filePath, Buffer.from(await file.arrayBuffer()));
+            const updateTime = await this.updateClaimLastUpdated(claimId);
+            if (!updateTime) return false;
             return true;
         } catch (e) {
             console.error("DatabaseManager", "Add Evidence - Error writing file", e);
@@ -599,7 +652,7 @@ export class DatabaseManager {
         }
     }
 
-    removeEvidence(claimId: number, evidenceName: string): boolean {
+    async removeEvidence(claimId: number, evidenceName: string): Promise<boolean> {
         const claimPath = `${this.fileStoragePath}/${claimId}`;
         const filePath = `${claimPath}/${evidenceName}`;
         const fileExists = fs.existsSync(filePath);
@@ -610,6 +663,8 @@ export class DatabaseManager {
         try {
             fs.unlinkSync(filePath);
             console.log("DatabaseManager", "Remove Evidence - File removed", filePath);
+            const updateTime = await this.updateClaimLastUpdated(claimId);
+            if (!updateTime) return false;
             return true;
         } catch (e) {
             console.error("DatabaseManager", "Remove Evidence - Error removing file", e);
