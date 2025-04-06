@@ -80,10 +80,10 @@ export default function dashboardPage() {
         />
       </div>
 
-      <Tabs>
+      <Tabs defaultValue="recent">
         <TabsList>
           <TabsTrigger value="recent">Recent Claims</TabsTrigger>
-          <TabsTrigger value="pendig">Pending Claims</TabsTrigger>
+          <TabsTrigger value="pending">Pending Claims</TabsTrigger>
         </TabsList>
         <TabsContent value="recent" className="space-y-4">
           <Card>
@@ -144,7 +144,7 @@ interface StatsCardProps {
 
 function StatsCard({ title, value, description, icon, href }: StatsCardProps) {
   return (
-    <Card>
+    <Card className="border border-gray-200 border-solid">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         {icon}
