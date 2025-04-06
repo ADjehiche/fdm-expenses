@@ -3,6 +3,7 @@ import { EmployeeClassification } from "../user";
 import { GeneralStaff } from "./generalStaff";
 import { EmployeeRole, EmployeeType } from "./employeeRole";
 import { DatabaseManager } from "../db/databaseManager";
+import { getEmployeeClassification, getEmployeeType } from "./utils";
 
 export class Administrator extends EmployeeRole {
     private employeeType: EmployeeType = EmployeeType.Administrator;
@@ -31,16 +32,24 @@ export class Administrator extends EmployeeRole {
         email: string,
         plainPassword: string,
         region: string,
-        classification?: EmployeeClassification,
-        role?: EmployeeType
+        classification?: string,
+        role?: string
     }): Promise<User | null> {
+        const newEmployeeClassification = classification ? getEmployeeClassification(classification) : EmployeeClassification.Internal;
+        const newEmployeeRole = role ? getEmployeeType(role) : EmployeeType.GeneralStaff;
+
+        if (!newEmployeeClassification || !newEmployeeRole) {
+            console.error("Invalid employee classification or type", classification, role);
+            return null;
+        }
+
         const newUser = new User({
             id,
             createdAt: new Date(),
             firstName,
             familyName,
             email,
-            employeeClassification: classification ?? EmployeeClassification.Internal,
+            employeeClassification: newEmployeeClassification,
             region: region,
             employeeRole: new GeneralStaff(-1)
         })
@@ -48,17 +57,24 @@ export class Administrator extends EmployeeRole {
         const db = DatabaseManager.getInstance();
         if (!db) return null;
 
-        if (!role || role == EmployeeType.GeneralStaff) {
-            // if role is not given, the default is GeneralStaff so add it to the database
-            return await db.addAccount(newUser, plainPassword);
-        }
+        const newAccount = await db.addAccount(newUser, plainPassword);
 
-        const changeRole = await this.changeRole(newUser.getId(), role);
-        if (!changeRole) {
-            console.error("Failed to change role");
+        if (!newAccount) {
+            console.error("Failed to create new account");
             return null;
         }
-        return await db.getAccount(newUser.getId());
+
+        if (newEmployeeRole == EmployeeType.GeneralStaff) {
+            // if role is not given, the default is GeneralStaff so add it to the database
+            return newAccount;
+        }
+
+        const changeRole = await this.changeRole(newAccount.getId(), newEmployeeRole);
+        if (!changeRole) {
+            console.error("Failed to change role");
+            return newAccount;
+        }
+        return await db.getAccount(newAccount.getId());
     }
 
     async deleteAccount(userId: number): Promise<boolean> {

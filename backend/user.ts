@@ -93,6 +93,6 @@ export class User {
 }
 
 export enum EmployeeClassification {
-    Internal,
-    External
+    Internal = "Internal",
+    External = "External"
 }
