@@ -21,7 +21,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ users }) => {
                 {user.getFirstName()} {user.getFamilyName()}
               </h3>
               <p>Email: {user.getEmail()}</p>
-              <p>Role: {JSON.parse(JSON.stringify(user.getEmployeeRole())).employeeType}</p> // user.getEmployeeRole returns an object that cant be turned into a string, therefore it must be stringified and parsed to access the employeetype attribute
+              <p>Role: {JSON.parse(JSON.stringify(user.getEmployeeRole())).employeeType}</p> {/*user.getEmployeeRole returns an object that cant be turned into a string, therefore it must be stringified and parsed to access the employeetype attribute*/}
               <p>Region: {user.getRegion()}</p>
             </li>
           ))
