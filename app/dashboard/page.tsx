@@ -1,3 +1,4 @@
+"use client";
 import type React from "react";
 import Link from "next/link";
 import {
@@ -23,7 +24,15 @@ import {
   getRecentClaims,
   getPendingClaims,
 } from "@/lib/mock-data";
+
+
+import { useUser } from "@/app/contexts/UserContext";
 export default function dashboardPage() {
+  const { user, loading } = useUser();
+
+  if (loading) return <div>Loading...</div>;
+  if (!user) return <div>Not logged in</div>;
+
   const counts = getClaimCounts();
   const recentClaims = getRecentClaims();
   const pendingClaims = getPendingClaims();
