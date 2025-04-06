@@ -1,3 +1,13 @@
+# Key:
+- [ ] create draft form
+- [ ] upload evidence
+- [ ] submit
+- [ ] line manager - approve / reject
+- [ ] payroll officer - reimburse
+- [ ] admin - add accounts
+- [ ] change password
+- [ ] view approved forms
+- [ ] view approved forms
 
 # Employee
 - create draft form
@@ -5,13 +15,13 @@
 - submit
 - edit (ignore)
 - view claim forms
- - rejected
- - submitted
- - approved
- - reimbursed
- - pending
+  - rejected
+  - submitted
+  - approved
+  - reimbursed
+  - pending
 - login
-- password (ignore)
+- change password
 
 # Line Manager
 - approve / reject
