@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { Edit, Eye, Trash2, Plus } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,34 +21,47 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default function DraftClaimsPage() {
-  // Mock data for draft claims
-  const draftClaims = [
-    {
-      id: "1",
-      title: "Client Meeting Lunch",
-      date: "Mar 15, 2025",
-      amount: "$45.00",
-      category: "Meals & Entertainment",
-      lastUpdated: "2 days ago",
-    },
-    {
-      id: "2",
-      title: "Office Supplies",
-      date: "Mar 10, 2025",
-      amount: "$120.75",
-      category: "Office Supplies",
-      lastUpdated: "1 week ago",
-    },
-    {
-      id: "3",
-      title: "Conference Registration",
-      date: "Apr 5, 2025",
-      amount: "$350.00",
-      category: "Training & Development",
-      lastUpdated: "3 days ago",
-    },
-  ];
+import { getDraftClaims } from "@/actions/claimActions";
+import { getCurrentUser } from "@/actions/loginauth";
+
+// Helper function for safe date formatting
+function formatRelativeDate(dateString: string): string {
+  try {
+    // Only try to format if we have a string
+    if (!dateString) return "Unknown";
+
+    const date = new Date(dateString);
+
+    // Check if the date is valid
+    if (isNaN(date.getTime())) return "Unknown";
+
+    return formatDistanceToNow(date, { addSuffix: true });
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return "Unknown";
+  }
+}
+
+export default async function DraftClaimsPage() {
+  // Directly use the getCurrentUser function instead of cookie parsing
+  const user = await getCurrentUser();
+
+  if (!user || !user.id) {
+    console.error("User not authenticated or missing ID");
+    redirect("/login");
+  }
+
+  // Fetch real draft claims from database
+  const response = await getDraftClaims(parseInt(user.id));
+  const draftClaims = response.success ? response.claims || [] : [];
+
+  // Function to format amount with currency symbol
+  const formatAmount = (amount: number) => {
+    return new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency: "GBP",
+    }).format(amount);
+  };
 
   return (
     <div className="space-y-6 text-black">
@@ -89,8 +105,10 @@ export default function DraftClaimsPage() {
                     <TableCell className="font-medium">{claim.title}</TableCell>
                     <TableCell>{claim.date}</TableCell>
                     <TableCell>{claim.category}</TableCell>
-                    <TableCell>{claim.amount}</TableCell>
-                    <TableCell>{claim.lastUpdated}</TableCell>
+                    <TableCell>{formatAmount(claim.amount)}</TableCell>
+                    <TableCell>
+                      {formatRelativeDate(claim.lastUpdated)}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button variant="ghost" size="icon" asChild>
