@@ -42,7 +42,7 @@ export default function DashboardLayout({
           <div className="flex items-center space-x-2">
             <a
               id="site-logo"
-              href="."
+              href="/dashboard"
               title="fdm logo"
               className="items-center px-5 flex-none"
             >

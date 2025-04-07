@@ -161,3 +161,47 @@ export async function getDraftClaims(employeeId: number): Promise<{
     };
   }
 }
+
+/**
+ * Server action to update a claim's status from Draft to Pending
+ */
+export async function submitDraftClaim(claimId: number): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const db = DatabaseManager.getInstance();
+    const claim = await db.getClaim(claimId);
+
+    if (!claim) {
+      return { success: false, error: "Claim not found" };
+    }
+
+    if (claim.getStatus() !== ClaimStatus.DRAFT) {
+      return {
+        success: false,
+        error: "Only draft claims can be submitted",
+      };
+    }
+
+    // Update the attempt count
+    const newAttemptCount = claim.getAttemptCount() + 1;
+    await db.updateClaimAttemptCount(claimId, newAttemptCount);
+
+    // Update the claim status to PENDING
+    const result = await db.updateClaimStatus(claimId, ClaimStatus.PENDING);
+
+    if (!result) {
+      return { success: false, error: "Failed to update claim status" };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error submitting claim:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
