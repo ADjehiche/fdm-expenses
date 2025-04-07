@@ -1,11 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { useActionState } from "react";
+
 import { UserPlus } from 'lucide-react';
-import { handleCreateAccount } from './CreateAccount';
+// import { handleCreateAccount } from './CreateAccount';
+import { CreateAccountAdmin } from '../../../../actions/createAccount';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,9 +41,20 @@ const CreateAccountSchema = z.object({
   lineManagerId: z.string().optional(),
 });
 
+const initialState = {
+  success: false
+};
+
 function CreateAccountPage() {
-  const [status, setStatus] = useState<string | null>(null);
+  const router = useRouter();
+  const [status, formAction] = useActionState(CreateAccountAdmin, initialState);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (status.success) {
+      router.push("/dashboard/admin");
+    }
+  }, [status.success, router]);
 
   const form = useForm<z.infer<typeof CreateAccountSchema>>({
     resolver: zodResolver(CreateAccountSchema),
@@ -54,28 +69,6 @@ function CreateAccountPage() {
       lineManagerId: '',
     },
   });
-
-  const onSubmit = async (values: z.infer<typeof CreateAccountSchema>) => {
-    setIsLoading(true);
-    setStatus(null);
-    
-    // Convert form data to FormData for the existing handler
-    const formData = new FormData();
-    Object.entries(values).forEach(([key, value]) => {
-      if (value) formData.append(key, value);
-    });
-    
-    const result = await handleCreateAccount(formData);
-    
-    if (result && 'error' in result === false) {
-      setStatus('✅ Account created successfully!');
-      form.reset();
-    } else {
-      setStatus(result?.error || '❌ Failed to create account.');
-    }
-    
-    setIsLoading(false);
-  };
 
   return (
     <div className="space-y-6 text-black">
@@ -96,13 +89,24 @@ function CreateAccountPage() {
           
           <CardContent className="pt-6">
             {status && (
-              <div className={`p-3 mb-6 rounded-md text-sm ${status.includes('✅') ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-                {status}
+              <div className={`p-3 mb-6 rounded-md text-sm ${status.success ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                {status.success ? (
+                  <p>Account created successfully!</p>
+                ) : (
+                  <p>Failed to create account. Please try again.</p>
+                )}
               </div>
             )}
             
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+              action={async (formData) => {
+                setIsLoading(true);
+                const request = new Request('', { method: 'POST', body: formData });
+                await formAction(request);
+                setIsLoading(false);
+              }} 
+               className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -212,10 +216,10 @@ function CreateAccountPage() {
                           >
                             <option value="">Select Role</option>
                             <option value="Administrator">Administrator</option>
-                            <option value="PayrollOfficer">Payroll Officer</option>
-                            <option value="GeneralStaff">Staff</option>
+                            <option value="Payroll Officer">Payroll Officer</option>
+                            <option value="Line Manager">Line Manager</option>
+                            <option value="General Staff">Staff</option>
                             <option value="Consultant">Consultant</option>
-                            <option value="LineManager">Line Manager</option>
                           </select>
                         </FormControl>
                         <FormMessage className="text-red-500 font-medium" />
