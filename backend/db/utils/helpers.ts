@@ -189,14 +189,14 @@ const payrollReimburseClaim = async (
 
   console.log(
     "Payroll Officer Claim Insert successful, claim:",
-    `id: ${reimbursedClaim.getId()}, amount: ${reimbursedClaim.getAmount()} status: ${payrollOfficerRole.getStatus()}`
+    `id: ${reimbursedClaim.getId()}, amount: ${reimbursedClaim.getAmount()} status: ${reimbursedClaim.getStatus()}`
   );
 
   return reimbursedClaim;
 };
 
 export const createDraftClaim = async (emp: User): Promise<Claim> => {
-  const claim = await emp.getEmployeeRole().createDraftClaim();
+  const claim = await emp.getEmployeeRole().createDraftClaim({});
 
   if (!claim) {
     throw new Error(`Claim Insert failed for ${emp.getEmployeeType()}`);
