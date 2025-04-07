@@ -392,59 +392,49 @@ export class DatabaseManager {
         return updateUser.length === 1;
     }
 
+    // Claim table
+
     async addClaim(claim: Claim): Promise<Claim | null> {
         const insert = await db.insert(claimsTable).values({
-            createdAt: claim.getCreatedAt(),
-            lastUpdated: claim.getLastUpdated(),
-            amount: claim.getAmount(),
             employeeId: claim.getEmployeeId(),
             attemptCount: claim.getAttemptCount(),
             status: claim.getStatus() as typeof claimsTable.$inferInsert["status"],
-            feedback: claim.getFeedback()
+
+            amount: claim.getAmount(),
+            feedback: claim.getFeedback(),
+
+            title: claim.getTitle(),
+            description: claim.getDescription(),
+            category: claim.getCategory(),
+            currency: claim.getCurrency(),
+
+            createdAt: claim.getCreatedAt(),
+            lastUpdated: claim.getLastUpdated(),
         }).returning();
         if (insert.length !== 1) {
             return null;
         }
         return new Claim({
             id: insert[0].id,
-            createdAt: insert[0].createdAt,
-            lastUpdated: insert[0].lastUpdated,
             amount: insert[0].amount,
             employeeId: insert[0].employeeId,
             attemptCount: insert[0].attemptCount,
             status: insert[0].status as ClaimStatus,
             feedback: insert[0].feedback,
             evidence: [],
+
             accountName: insert[0].accountName,
             accountNumber: insert[0].accountNumber,
-            sortCode: insert[0].sortCode
+            sortCode: insert[0].sortCode,
+
+            title:insert[0].title,
+            description:insert[0].description,
+            category:insert[0].category,
+            currency:insert[0].currency,
+
+            createdAt: insert[0].createdAt,
+            lastUpdated: insert[0].lastUpdated,
         });
-    }
-
-    async updateClaimStatus(claimId: number, newClaimStatus: ClaimStatus): Promise<boolean> {
-        const result = await db.update(claimsTable).set({
-            status: newClaimStatus as typeof claimsTable.$inferInsert["status"],
-        }).where(eq(claimsTable.id, claimId)).returning();
-
-        if (!result) {
-            return false;
-        }
-        const updateTime = await this.updateClaimLastUpdated(claimId);
-        if (!updateTime) return false;
-        return result.length === 1;
-    }
-
-    async updateClaimAttemptCount(claimId: number, newAttemptCount: number): Promise<boolean> {
-        const result = await db.update(claimsTable).set({
-            attemptCount: newAttemptCount,
-        }).where(eq(claimsTable.id, claimId)).returning();
-
-        if (!result) {
-            return false;
-        }
-        const updateTime = await this.updateClaimLastUpdated(claimId);
-        if (!updateTime) return false;
-        return result.length === 1;
     }
 
     async getClaim(claimId: number): Promise<Claim | null> {
@@ -453,19 +443,28 @@ export class DatabaseManager {
 
         return new Claim({
             id: result[0].id,
-            createdAt: result[0].createdAt,
-            lastUpdated: result[0].lastUpdated,
-            amount: result[0].amount,
             employeeId: result[0].employeeId,
+
+            amount: result[0].amount,
             attemptCount: result[0].attemptCount,
             status: result[0].status as ClaimStatus,
             feedback: result[0].feedback,
             evidence: this.getAllClaimEvidence(result[0].id),
+
             accountName: result[0].accountName,
             accountNumber: result[0].accountNumber,
-            sortCode: result[0].sortCode
+            sortCode: result[0].sortCode,
+
+            title:result[0].title,
+            description:result[0].description,
+            category:result[0].category,
+            currency:result[0].currency,
+
+            createdAt: result[0].createdAt,
+            lastUpdated: result[0].lastUpdated,
         })
     }
+
 
     async getClaimsByManager(managerId: number): Promise<Claim[]> {
         const result = await db.select().from(claimsTable).innerJoin(lineManagersTable, eq(claimsTable.employeeId, lineManagersTable.employeeId)).where(eq(lineManagersTable.lineManagerId, managerId));
@@ -473,17 +472,25 @@ export class DatabaseManager {
             const claim = row.claims_table
             return new Claim({
                 id: claim.id,
-                createdAt: claim.createdAt,
-                lastUpdated: claim.lastUpdated,
-                amount: claim.amount,
                 employeeId: claim.employeeId,
+
+                amount: claim.amount,
                 attemptCount: claim.attemptCount,
                 status: claim.status as ClaimStatus,
                 feedback: claim.feedback,
                 evidence: this.getAllClaimEvidence(claim.id),
+
                 accountName: claim.accountName,
                 accountNumber: claim.accountNumber,
-                sortCode: claim.sortCode
+                sortCode: claim.sortCode,
+
+                title:claim.title,
+                description:claim.description,
+                category:claim.category,
+                currency:claim.currency,
+
+                createdAt: claim.createdAt,
+                lastUpdated: claim.lastUpdated,
             })
         }).filter((claim) => claim.getStatus() == ClaimStatus.PENDING)
     }
@@ -494,43 +501,27 @@ export class DatabaseManager {
         return result.map((row) => {
             return new Claim({
                 id: row.id,
-                createdAt: row.createdAt,
-                lastUpdated: row.lastUpdated,
-                amount: row.amount,
                 employeeId: row.employeeId,
+
+                amount: row.amount,
                 attemptCount: row.attemptCount,
                 status: row.status as ClaimStatus,
                 feedback: row.feedback,
                 evidence: this.getAllClaimEvidence(row.id),
+
                 accountName: row.accountName,
                 accountNumber: row.accountNumber,
-                sortCode: row.sortCode
+                sortCode: row.sortCode,
+                
+                title:row.title,
+                description:row.description,
+                category:row.category,
+                currency:row.currency,
+
+                createdAt: row.createdAt,
+                lastUpdated: row.lastUpdated,
             })
         })
-    }
-
-    async updateClaimFeedback(claimId: number, feedback: string): Promise<boolean> {
-        const result = await db.update(claimsTable).set({
-            feedback: feedback
-        }).where(eq(claimsTable.id, claimId)).returning();
-        if (!result) {
-            return false;
-        }
-        const updateTime = await this.updateClaimLastUpdated(claimId);
-        if (!updateTime) return false;
-        return result.length === 1;
-    }
-
-    async updateClaimAmount(claimId: number, amount: number): Promise<boolean> {
-        const result = await db.update(claimsTable).set({
-            amount: amount
-        }).where(eq(claimsTable.id, claimId)).returning();
-        if (!result) {
-            return false;
-        }
-        const updateTime = await this.updateClaimLastUpdated(claimId);
-        if (!updateTime) return false;
-        return result.length === 1;
     }
 
     async getAllAcceptedClaims(): Promise<Claim[]> {
@@ -540,17 +531,25 @@ export class DatabaseManager {
         return result.map((row) => {
             return new Claim({
                 id: row.id,
-                createdAt: row.createdAt,
-                lastUpdated: row.lastUpdated,
-                amount: row.amount,
                 employeeId: row.employeeId,
+
+                amount: row.amount,
                 attemptCount: row.attemptCount,
                 status: row.status as ClaimStatus,
                 feedback: row.feedback,
                 evidence: this.getAllClaimEvidence(row.id),
+
                 accountName: row.accountName,
                 accountNumber: row.accountNumber,
-                sortCode: row.sortCode
+                sortCode: row.sortCode,
+
+                title:row.title,
+                description:row.description,
+                category:row.category,
+                currency:row.currency,
+
+                createdAt: row.createdAt,
+                lastUpdated: row.lastUpdated,
             })
         })
     }
@@ -580,6 +579,57 @@ export class DatabaseManager {
         if (!result) {
             return false;
         }
+        return result.length === 1;
+    }
+
+
+    async updateClaimFeedback(claimId: number, feedback: string): Promise<boolean> {
+        const result = await db.update(claimsTable).set({
+            feedback: feedback
+        }).where(eq(claimsTable.id, claimId)).returning();
+        if (!result) {
+            return false;
+        }
+        const updateTime = await this.updateClaimLastUpdated(claimId);
+        if (!updateTime) return false;
+        return result.length === 1;
+    }
+
+    async updateClaimAmount(claimId: number, amount: number): Promise<boolean> {
+        const result = await db.update(claimsTable).set({
+            amount: amount
+        }).where(eq(claimsTable.id, claimId)).returning();
+        if (!result) {
+            return false;
+        }
+        const updateTime = await this.updateClaimLastUpdated(claimId);
+        if (!updateTime) return false;
+        return result.length === 1;
+    }
+
+    async updateClaimStatus(claimId: number, newClaimStatus: ClaimStatus): Promise<boolean> {
+        const result = await db.update(claimsTable).set({
+            status: newClaimStatus as typeof claimsTable.$inferInsert["status"],
+        }).where(eq(claimsTable.id, claimId)).returning();
+
+        if (!result) {
+            return false;
+        }
+        const updateTime = await this.updateClaimLastUpdated(claimId);
+        if (!updateTime) return false;
+        return result.length === 1;
+    }
+
+    async updateClaimAttemptCount(claimId: number, newAttemptCount: number): Promise<boolean> {
+        const result = await db.update(claimsTable).set({
+            attemptCount: newAttemptCount,
+        }).where(eq(claimsTable.id, claimId)).returning();
+
+        if (!result) {
+            return false;
+        }
+        const updateTime = await this.updateClaimLastUpdated(claimId);
+        if (!updateTime) return false;
         return result.length === 1;
     }
 

@@ -1,3 +1,4 @@
+import { desc } from "drizzle-orm";
 import { Claim, ClaimStatus } from "../claims/claim";
 import { DatabaseManager } from "../db/databaseManager";
 import { User } from "../user";
@@ -32,30 +33,47 @@ export abstract class EmployeeRole {
     }
 
     async createDraftClaim({
+        title,
+        description,
+        category,
+        currency,
         amount,
         accountName,
         accountNumber,
-        sortCode
+        sortCode,
     }: {
+        title: string
+        description: string
+        category: string
+        currency: string
         amount?: number,
         accountName?: string,
         accountNumber?: string,
-        sortCode?: string
+        sortCode?: string,
     }): Promise<Claim | null> {
         const db = DatabaseManager.getInstance();
         const claim = new Claim({
             id: 0,
             employeeId: this.userId,
+
             status: ClaimStatus.DRAFT,
             attemptCount: 0,
-            createdAt: new Date(),
+            
             amount: amount ?? 0,
-            lastUpdated: new Date(),
             evidence: [],
             feedback: "",
+
             accountName: accountName ?? null,
             accountNumber: accountNumber ?? null,
-            sortCode: sortCode ?? null
+            sortCode: sortCode ?? null,
+
+            title:title,
+            description:description,
+            currency:currency,
+            category:category,
+
+            createdAt: new Date(),
+            lastUpdated: new Date(),
         });
         return await db.addClaim(claim);
     }
