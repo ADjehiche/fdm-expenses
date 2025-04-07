@@ -34,14 +34,34 @@ const initialState = {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [state, formAction] = useActionState(login, initialState); // Login will be a callback function that actually validates the details
+  const [state, formAction] = useActionState(login, initialState);
   const [isPending, setIsPending] = useState(false);
 
   useEffect(() => {
     if (state.success) {
-      router.push("/dashboard");
+      if (state.newLogin) {
+        // Import the standalone refresh function instead of the hook
+        import("@/app/contexts/UserContext")
+          .then(({ refreshUserData }) => {
+            // Call the standalone refresh function
+            refreshUserData()
+              .then(() => {
+                router.push("/dashboard");
+              })
+              .catch((error) => {
+                console.error("Error refreshing user data:", error);
+                router.push("/dashboard");
+              });
+          })
+          .catch((error) => {
+            console.error("Error importing user context:", error);
+            router.push("/dashboard");
+          });
+      } else {
+        router.push("/dashboard");
+      }
     }
-  }, [state.success, router]);
+  }, [state.success, state.newLogin, router]);
 
   const form = useForm<z.infer<typeof LoginSchema>>({
     resolver: zodResolver(LoginSchema),

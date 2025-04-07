@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { UserRole } from "@/lib/types";
 import { useUser } from "@/app/contexts/UserContext";
+import { logout } from "@/actions/loginauth";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -29,12 +30,12 @@ export default function DashboardLayout({
   children,
   role = "employee",
 }: DashboardLayoutProps) {
-    const { user, loading } = useUser();
-    if (loading) return <div>Loading...</div>;
-    if (!user) return <div>Not logged in</div>;
-    const userRole = user.employeeRoleType;
-    console.log(userRole);
-    return (
+  const { user, loading } = useUser();
+  if (loading) return <div>Loading...</div>;
+  if (!user) return <div>Not logged in</div>;
+  const userRole = user.employeeRoleType;
+  console.log(userRole);
+  return (
     <div className="min-h-screen flex flex-col">
       <header className="bg-fdm-blue text-white top-0 z-10">
         <div className="container mx-auto px-4 py-6 flex justify-between items-center">
@@ -52,13 +53,16 @@ export default function DashboardLayout({
             <div className="flex items-center space-x-4">
               <div className="text-sm">
                 <span className="block opacity-75">Welcome,</span>
-                <span className="font-medium">{user.firstName} {user.familyName}</span>
+                <span className="font-medium">
+                  {user.firstName} {user.familyName}
+                </span>
               </div>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              className="text-white hover:bg-black/20"
+              className="text-white hover:bg-black/20 hover:text-white ml-4 cursor-pointer hover:scale-[102%] transition-transform duration-200 ease-in-out"
+              onClick={() => logout()}
             >
               <LogOut className="h-5 w-5" />
               <span className="sr-only">Logout</span>
@@ -108,7 +112,7 @@ export default function DashboardLayout({
               label="Rejected Claims"
             />
 
-            {(userRole === "lineManager") && (
+            {userRole === "lineManager" && (
               <>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2 px-3">
                   Management
@@ -126,7 +130,7 @@ export default function DashboardLayout({
               </>
             )}
 
-            {(userRole === "payrollOfficer") && (
+            {userRole === "payrollOfficer" && (
               <>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2 px-3">
                   Payroll

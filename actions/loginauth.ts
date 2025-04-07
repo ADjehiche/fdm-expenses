@@ -12,6 +12,7 @@ import { SerializedUser, serializeUser } from "../backend/serializedTypes";
 type LoginState = {
   error: string;
   success?: boolean;
+  newLogin?: boolean;
 };
 
 /**
@@ -49,7 +50,7 @@ export async function login(
     });
     console.log("Logged In as", user.getEmail());
 
-    return { error: "", success: true };
+    return { error: "", success: true, newLogin: true };
   } catch (error) {
     console.error("Login error:", error);
     return { error: "An unexpected error occurred" };
@@ -82,14 +83,17 @@ export async function register(
 
     // Get the database manager singleton instance
     const dbManager = DatabaseManager.getInstance();
-    
+
     // Attempt to register the user
     // The Register method handles password hashing and storage
     const user = await dbManager.Register(email, password);
 
     // If registration failed, return an error
     if (!user) {
-      return { error: "Registration failed. Email may already be in use or an administrator account already exists." };
+      return {
+        error:
+          "Registration failed. Email may already be in use or an administrator account already exists.",
+      };
     }
 
     // Automatically log the user in after successful registration
@@ -100,7 +104,7 @@ export async function register(
       maxAge: 60 * 60 * 24 * 7, // 1 week
       path: "/",
     });
-    
+
     // Return success
     return { error: "", success: true };
   } catch (error) {
@@ -136,11 +140,11 @@ export async function getCurrentUser(): Promise<SerializedUser | null> {
   // Fetch the complete user object from the database
   const dbManager = DatabaseManager.getInstance();
   const user = await dbManager.getAccount(parseInt(userId));
-  
+
   if (!user) {
     return null;
   }
-  
+
   // Convert User class to a serializable object
   return serializeUser(user);
 }
