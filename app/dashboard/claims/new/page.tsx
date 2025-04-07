@@ -94,11 +94,8 @@ export default function NewExpenseClaimPage() {
 
       // Format the claim metadata to include all relevant information
       const claimMetadata = JSON.stringify({
-        title: values.title,
         description: values.description,
         date: values.date,
-        category: values.category,
-        currency: values.currency,
       });
 
       // Create claim using server action
@@ -106,6 +103,10 @@ export default function NewExpenseClaimPage() {
         employeeId: parseInt(user.id),
         amount: parseFloat(values.amount),
         metadata: claimMetadata,
+        title: values.title,
+        description: values.description,
+        category:values.category,
+        currency:values.currency,
       });
 
       if (!response.success || !response.claimId) {

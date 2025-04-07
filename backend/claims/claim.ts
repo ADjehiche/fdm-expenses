@@ -1,13 +1,14 @@
+import { desc } from "drizzle-orm";
 import { DatabaseManager } from "../db/databaseManager";
 
 export class Claim {
     private id: number;
-    private createdAt: Date;
-    private amount: number;
-    private attemptCount: number;
     private employeeId: number;
-    private lastUpdated: Date;
+    private attemptCount: number;
     private status: ClaimStatus;
+
+    private currency:string;
+    private amount: number;
     private evidence: Array<string>;
     private feedback: string;
 
@@ -15,48 +16,77 @@ export class Claim {
     private accountNumber: string | null;
     private sortCode: string | null;
 
+    private title:string;
+    private description:string;
+    private category:string;
+
+    private createdAt: Date;
+    private lastUpdated: Date;
+
     static MAX_ATTEMPT_COUNT = 3;
 
     constructor({
         id,
-        createdAt,
-        amount,
-        lastUpdated,
-        attemptCount,
         employeeId,
         status,
+        attemptCount,
+
+        amount,
         evidence,
         feedback,
+
         accountName,
         accountNumber,
-        sortCode
+        sortCode,
+
+        title,
+        description,
+        category,
+        currency,
+
+        createdAt,
+        lastUpdated,
     }: {
         id: number,
-        createdAt: Date,
-        amount: number,
-        attemptCount: number,
         employeeId: number,
-        lastUpdated: Date,
         status: ClaimStatus,
+        attemptCount: number,
+
+        amount: number,
         evidence: Array<string>,
         feedback: string,
         accountName: string | null,
         accountNumber: string | null,
-        sortCode: string | null
+        sortCode: string | null,
+
+        title: string,
+        description:string,
+        category:string,
+        currency:string,
+
+        createdAt: Date,
+        lastUpdated: Date,
     }) {
         this.id = id;
-        this.createdAt = createdAt;
-        this.amount = amount;
-        this.attemptCount = attemptCount;
-        this.lastUpdated = lastUpdated;
         this.employeeId = employeeId;
+        this.attemptCount = attemptCount;
         this.status = status;
+
+        this.title=title;
+        this.description=description;
+        this.category=category;
+
+        this.currency=currency;
+        this.amount = amount;
         this.evidence = evidence;
         this.feedback = feedback;
 
         this.accountName = accountName;
         this.accountNumber = accountNumber;
         this.sortCode = sortCode;
+
+        this.createdAt = createdAt;
+        this.lastUpdated = lastUpdated;
     }
 
     public getId(): number {
@@ -137,12 +167,24 @@ export class Claim {
 
     public getAttemptCount(): number { return this.attemptCount; }
     public setAttemptCount(attemptCount: number): void { this.attemptCount = attemptCount; }
+    public incrementAttemptCount(): void { this.attemptCount++; }
 
     public getEmployeeId(): number { return this.employeeId; }
     public setEmployeeId(employeeId: number): void { this.employeeId = employeeId; }
 
     public setLastUpdated(lastUpdated: Date): void { this.lastUpdated = lastUpdated; }
-    public incrementAttemptCount(): void { this.attemptCount++; }
+
+    public getTitle() : string {return this.title;}
+    public setTitle(s : string) {this.title=s;}
+
+    public getDescription() : string {return this.description;}
+    public setDescription(s : string) {this.title=s;}
+    
+    public getCategory() : string {return this.category;}
+    public setCategory(s : string) {this.title=s;}
+    
+    public getCurrency() : string {return this.currency;}
+    public setCurrency(s : string) {this.title=s;}
 }
 
 export enum ClaimStatus {

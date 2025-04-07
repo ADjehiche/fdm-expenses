@@ -42,7 +42,6 @@ export const lineManagersRelations = relations(lineManagersTable, ({ many }) => 
 
 export const claimsTable = sqliteTable("claims_table", {
     id: int().primaryKey({ autoIncrement: true }),
-
     employeeId: int().notNull().references(() => usersTable.id),
 
     amount: int().default(0).notNull(),
@@ -50,9 +49,16 @@ export const claimsTable = sqliteTable("claims_table", {
     status: text({ enum: ["Draft", "Pending", "Accepted", "Rejected", "Reimbursed"] }).default("Draft").notNull(),
     feedback: text().notNull(),
 
+    title: text().notNull(),
+    description: text().notNull(),
+    category: text().notNull(),
+    currency: text().notNull(),
+
     accountName: text(),
     accountNumber: text(),
     sortCode: text(),
+
+
 
     createdAt: int({ mode: "timestamp_ms" }).default(new Date(Date.now())).notNull(),
     lastUpdated: int({ mode: "timestamp_ms" }).default(new Date(Date.now())).notNull(),
