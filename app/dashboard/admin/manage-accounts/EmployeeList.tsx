@@ -13,6 +13,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Edit, Trash2 } from "lucide-react";
+import Link from 'next/link';
 
 // Define prop types for EmployeeList
 interface EmployeeListProps {
@@ -61,14 +62,16 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ users }) => {
                   <TableCell>{user.region}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2 ">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="h-8 w-8 p-0 bg-white" 
-                        title="Edit user"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <Link href="/dashboard/admin/manage-accounts/edit-user">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 bg-white" 
+                          title="Edit user"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </Link>
                       <Button 
                         variant="outline" 
                         size="sm" 

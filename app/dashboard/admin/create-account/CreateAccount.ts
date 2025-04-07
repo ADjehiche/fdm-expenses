@@ -1,9 +1,9 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { Administrator } from "../backend/employee/administrator";
-import { checkIfAdmin } from "../app/dashboard/admin/checkAdmin";
-import { DatabaseManager } from "../backend/db/databaseManager";
+import { Administrator } from "../../../../backend/employee/administrator";
+import { checkIfAdmin } from "../checkAdmin";
+import { DatabaseManager } from "../../../../backend/db/databaseManager";
 
 // Define the state type for form submissions
 type CreateAccountState = {
@@ -65,7 +65,6 @@ export async function CreateAccountAdmin(
       region,
       classification: employeeClassification || undefined,
       role: employeeRole || undefined,
-      lineManagerId: lineManagerId ? parseInt(lineManagerId) : undefined,
     });
 
     if (!result) {
