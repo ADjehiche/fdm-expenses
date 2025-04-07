@@ -11,23 +11,34 @@ export async function createClaim(data: {
   employeeId: number;
   amount: number;
   metadata: string;
+  title:string;
+  description:string;
+  category:string;
+  currency:string;
 }): Promise<{ success: boolean; claimId?: number; error?: string }> {
   try {
     // Create a new claim object
     const now = new Date();
     const claim = new Claim({
       id: -1, // Will be assigned by the database
-      createdAt: now,
-      lastUpdated: now,
-      amount: data.amount,
       employeeId: data.employeeId,
+      amount: data.amount,
       attemptCount: 0,
       status: ClaimStatus.DRAFT,
       evidence: [], // Will add evidence files after claim is created
       feedback: data.metadata,
+
       accountName: null,
       accountNumber: null,
       sortCode: null,
+
+      title:data.title,
+      description:data.description,
+      category:data.category,
+      currency:data.currency,
+
+      createdAt: now,
+      lastUpdated: now,
     });
 
     // Save the claim to the database
@@ -114,19 +125,17 @@ export async function getDraftClaims(employeeId: number): Promise<{
     // Transform the claims to the format needed by the UI
     const formattedClaims = claims.map((claim) => {
       // Parse the feedback which contains the metadata
-      let title = "Expense Claim";
+      let title = claim.getTitle()||"Expense Claim";
       let date = "";
-      let category = "";
+      let category = claim.getCategory()||"";
 
-      try {
-        const metadata = JSON.parse(claim.getFeedback());
-        title = metadata.title || title;
-        date = metadata.date || "";
-        category = metadata.category || "";
-      } catch (e) {
-        // If feedback is not in JSON format, use it as the title
-        title = claim.getFeedback() || title;
-      }
+      // try {
+      //   const metadata = JSON.parse(claim.getFeedback());
+      //   date = metadata.date || "";
+      // } catch (e) {
+      //   // If feedback is not in JSON format, use it as the title
+      //   title = claim.getFeedback() || title;
+      // }
 
       // Format the lastUpdated date as an ISO string to ensure safe serialization
       let lastUpdatedStr = "";
