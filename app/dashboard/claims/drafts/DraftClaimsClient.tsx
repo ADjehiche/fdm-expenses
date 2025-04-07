@@ -123,7 +123,7 @@ export default function DraftClaimsClient({
         </Button>
       </div>
 
-      <Card>
+      <Card className="border-gray-200 border-solid border-2">
         <CardHeader className="pb-3">
           <CardTitle>Draft Expense Claims</CardTitle>
           <CardDescription>
@@ -157,15 +157,15 @@ export default function DraftClaimsClient({
                       <div className="flex justify-end gap-2">
                         <Button
                           variant="outline"
-                          size="sm"
+                          size="icon"
                           onClick={() => handleSubmit(claim.id)}
                           disabled={submitting === claim.id}
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
+                          className="text-green-600 border-none bg-gray-50 cursor-pointer"
                         >
                           {submitting === claim.id ? (
                             <span className="flex items-center">
                               <svg
-                                className="animate-spin -ml-1 mr-2 h-4 w-4 text-green-600"
+                                className="animate-spin h-4 w-4 text-green-600"
                                 xmlns="http://www.w3.org/2000/svg"
                                 fill="none"
                                 viewBox="0 0 24 24"
@@ -184,12 +184,10 @@ export default function DraftClaimsClient({
                                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                 ></path>
                               </svg>
-                              Submitting...
                             </span>
                           ) : (
                             <span className="flex items-center">
-                              <Send className="mr-2 h-4 w-4" />
-                              Submit
+                              <Send className="mr-2 h-4 w-4 cursor-pointer" />
                             </span>
                           )}
                         </Button>
@@ -199,13 +197,11 @@ export default function DraftClaimsClient({
                             <span className="sr-only">Edit</span>
                           </Link>
                         </Button>
-                        <Button variant="ghost" size="icon" asChild>
-                          <Link href={`/dashboard/claims/view/${claim.id}`}>
-                            <Eye className="h-4 w-4" />
-                            <span className="sr-only">View</span>
-                          </Link>
-                        </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="cursor-pointer"
+                        >
                           <Trash2 className="h-4 w-4 text-destructive" />
                           <span className="sr-only">Delete</span>
                         </Button>

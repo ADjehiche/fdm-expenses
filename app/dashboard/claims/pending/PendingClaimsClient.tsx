@@ -76,7 +76,7 @@ export default function PendingClaimsClient({
         </p>
       </div>
 
-      <Card>
+      <Card className="border-gray-200 border-solid border-2">
         <CardHeader className="pb-3">
           <CardTitle>Pending Expense Claims</CardTitle>
           <CardDescription>
