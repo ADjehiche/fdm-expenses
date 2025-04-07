@@ -25,12 +25,11 @@ import {
   getPendingClaims,
 } from "@/lib/mock-data";
 
-
 import { useUser } from "@/app/contexts/UserContext";
 export default function dashboardPage() {
   const { user, loading } = useUser();
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div className="text-white">Loading...</div>;
   if (!user) return <div>Not logged in</div>;
 
   const counts = getClaimCounts();
@@ -38,7 +37,6 @@ export default function dashboardPage() {
   const pendingClaims = getPendingClaims();
   return (
     <div className="space-y-6 text-black">
-
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
         <Button asChild className="bg-[#c3fa04] hover:bg-[#c3fa04]/90">
@@ -81,12 +79,12 @@ export default function dashboardPage() {
       </div>
 
       <Tabs defaultValue="recent">
-        <TabsList>
+        <TabsList className="bg-gray-100 border border-gray-200 rounded-md p-1">
           <TabsTrigger value="recent">Recent Claims</TabsTrigger>
           <TabsTrigger value="pending">Pending Claims</TabsTrigger>
         </TabsList>
         <TabsContent value="recent" className="space-y-4">
-          <Card>
+          <Card className="border border-gray-200 border-solid">
             <CardHeader className="pb-2">
               <CardTitle>Recent Expense Claims</CardTitle>
               <CardDescription>
@@ -186,7 +184,7 @@ function ClaimItem({ title, date, amount, status }: ClaimItemProps) {
   };
 
   return (
-    <div className="flex items-center justify-between p-3 border rounded-lg">
+    <div className="flex items-center justify-between p-3 border border-gray-200 shadow-sm rounded-lg">
       <div className="flex flex-col">
         <span className="font-medium">{title}</span>
         <span className="text-sm text-muted-foreground">{date}</span>

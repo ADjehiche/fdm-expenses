@@ -112,7 +112,7 @@ export default function DashboardLayout({
               label="Rejected Claims"
             />
 
-            {userRole === "lineManager" && (
+            {userRole === "Line Manager" && (
               <>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2 px-3">
                   Management
