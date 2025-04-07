@@ -92,11 +92,20 @@ export default function NewExpenseClaimPage() {
         throw new Error("User not authenticated");
       }
 
+      // Format the claim metadata to include all relevant information
+      const claimMetadata = JSON.stringify({
+        title: values.title,
+        description: values.description,
+        date: values.date,
+        category: values.category,
+        currency: values.currency,
+      });
+
       // Create claim using server action
       const response = await createClaim({
         employeeId: parseInt(user.id),
         amount: parseFloat(values.amount),
-        metadata: `${values.title} - ${values.category} - ${values.date}`,
+        metadata: claimMetadata,
       });
 
       if (!response.success || !response.claimId) {
@@ -309,7 +318,7 @@ export default function NewExpenseClaimPage() {
                   name="currency"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-gray-700 font-medium">
+                      <FormLabel className="text-gray-700 font-medium bg-white">
                         Currency
                       </FormLabel>
                       <Select
