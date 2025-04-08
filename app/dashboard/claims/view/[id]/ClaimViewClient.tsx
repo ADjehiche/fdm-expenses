@@ -33,6 +33,7 @@ import {
   approveClaimAction,
   rejectClaimAction,
   reimburseClaimAction,
+  submitDraftClaim,
 } from "@/actions/claimActions";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -526,12 +527,20 @@ export default function ClaimViewClient({
           </div>
         )}
 
-      {claim.status === ClaimStatus.REJECTED && (
-        <div className="mt-6">
-          <Button asChild>
-            <Link href={`/dashboard/claims/edit/${claim.id}`}>
-              Edit and Resubmit Claim
-            </Link>
+      {!isLineManager && claim.status === ClaimStatus.REJECTED && (
+        <div className="mt-6 flex flex-row gap-2">
+          <Button
+            asChild
+            className="bg-green-200 hover:bg-green-300 cursor-pointer"
+            onClick={async () => {
+              await submitDraftClaim(claim.id);
+              router.refresh();
+            }}
+          >
+            <p>Resubmit Claim</p>
+          </Button>
+          <Button asChild className="bg-gray-200 hover:bg-gray-300">
+            <Link href={`/dashboard/claims/edit/${claim.id}`}>Edit Claim</Link>
           </Button>
         </div>
       )}
