@@ -115,7 +115,7 @@ export default function dashboardPage() {
           href="/dashboard/claims/pending"
         />
         <StatsCard
-          title="Accepted Claims"
+          title="Approved Claims"
           value={counts.approved.toString()}
           description="Ready for payment"
           icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
