@@ -318,13 +318,6 @@ export async function submitDraftClaim(claimId: number): Promise<{
       return { success: false, error: "Claim not found" };
     }
 
-    if (claim.getStatus() !== ClaimStatus.DRAFT) {
-      return {
-        success: false,
-        error: "Only draft claims can be submitted",
-      };
-    }
-
     // Update the attempt count
     const newAttemptCount = claim.getAttemptCount() + 1;
     await db.updateClaimAttemptCount(claimId, newAttemptCount);

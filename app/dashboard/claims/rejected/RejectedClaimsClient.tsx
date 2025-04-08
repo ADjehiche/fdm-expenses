@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Eye, CheckCircle, XCircle } from "lucide-react";
+import { Edit, Send, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +23,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/components/use-toast";
+
+import { submitDraftClaim } from "@/actions/claimActions";
 
 // Helper function for safe date formatting
 function formatRelativeDate(dateString: string): string {
@@ -56,8 +59,10 @@ interface RejectedClaimsProps {
 export default function RejectedClaimsClient({
   claims: initialClaims,
 }: RejectedClaimsProps) {
-  const [claims] = useState(initialClaims);
+  const [claims, setClaims] = useState(initialClaims);
+  const [submitting, setSubmitting] = useState<number | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
 
   // Function to format amount with currency symbol
   const formatAmount = (amount: number) => {
@@ -65,6 +70,41 @@ export default function RejectedClaimsClient({
       style: "currency",
       currency: "GBP",
     }).format(amount);
+  };
+
+  const handleSubmit = async (claimId: number) => {
+    setSubmitting(claimId);
+    try {
+      const response = await submitDraftClaim(claimId);
+
+      if (response.success) {
+        toast({
+          title: "Claim submitted successfully",
+          description: "Your claim has been submitted for approval",
+        });
+
+        // Remove the submitted claim from the list
+        setClaims(claims.filter((claim) => claim.id !== claimId));
+
+        // Force a page refresh to update the data
+        router.refresh();
+      } else {
+        toast({
+          title: "Error",
+          description: response.error || "Failed to submit claim",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error submitting claim:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(null);
+    }
   };
 
   return (
@@ -110,11 +150,55 @@ export default function RejectedClaimsClient({
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleSubmit(claim.id)}
+                          disabled={submitting === claim.id}
+                          className="text-green-600 border-none bg-gray-50 cursor-pointer"
+                        >
+                          {submitting === claim.id ? (
+                            <span className="flex items-center">
+                              <svg
+                                className="animate-spin h-4 w-4 text-green-600"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                ></circle>
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                              </svg>
+                            </span>
+                          ) : (
+                            <span className="flex items-center">
+                              <Send className="mr-2 h-4 w-4 cursor-pointer" />
+                            </span>
+                          )}
+                        </Button>
                         <Button variant="ghost" size="icon" asChild>
-                          <Link href={`/dashboard/claims/view/${claim.id}`}>
-                            <Eye className="h-4 w-4" />
-                            <span className="sr-only">View</span>
+                          <Link href={`/dashboard/claims/edit/${claim.id}`}>
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Edit</span>
                           </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="cursor-pointer"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                          <span className="sr-only">Delete</span>
                         </Button>
                       </div>
                     </TableCell>

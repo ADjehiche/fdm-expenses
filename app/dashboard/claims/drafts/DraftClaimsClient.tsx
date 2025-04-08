@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Edit, Eye, Trash2, Plus, Send } from "lucide-react";
+import { Edit, Trash2, Plus, Send } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
