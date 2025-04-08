@@ -41,6 +41,41 @@ function formatRelativeDate(dateString: string): string {
   }
 }
 
+// Status Badge component to display claim status
+function StatusBadge({ status }: { status?: string }) {
+  if (!status) return null;
+
+  const getStatusStyles = () => {
+    switch (status) {
+      case "ACCEPTED":
+        return "bg-green-100 text-green-800 border-none";
+      case "REIMBURSED":
+        return "bg-blue-100 text-blue-800 border-none";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  const getStatusLabel = () => {
+    switch (status) {
+      case "ACCEPTED":
+        return "Accepted";
+      case "REIMBURSED":
+        return "Paid";
+      default:
+        return status;
+    }
+  };
+
+  return (
+    <span
+      className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusStyles()}`}
+    >
+      {getStatusLabel()}
+    </span>
+  );
+}
+
 interface ApprovedClaimsProps {
   claims: Array<{
     id: number;
@@ -49,6 +84,7 @@ interface ApprovedClaimsProps {
     amount: number;
     category: string;
     lastUpdated: string;
+    status?: "ACCEPTED" | "REIMBURSED"; // Add status field
   }>;
 }
 
@@ -92,6 +128,7 @@ export default function ApprovedClaimsClient({
                   <TableHead>Category</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Last Updated</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -105,9 +142,17 @@ export default function ApprovedClaimsClient({
                     <TableCell>
                       {formatRelativeDate(claim.lastUpdated)}
                     </TableCell>
+                    <TableCell>
+                      <StatusBadge status={claim.status} />
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" asChild>
+                        <Button
+                          title="View"
+                          variant="ghost"
+                          size="icon"
+                          asChild
+                        >
                           <Link href={`/dashboard/claims/view/${claim.id}`}>
                             <Eye className="h-4 w-4" />
                             <span className="sr-only">View</span>

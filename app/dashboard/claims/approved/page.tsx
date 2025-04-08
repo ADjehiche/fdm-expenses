@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/actions/loginauth";
-import { DatabaseManager } from "@/backend/db/databaseManager";
-import { ClaimStatus } from "@/backend/claims/claim";
-import { getAcceptedClaims } from "@/actions/claimActions";
+import { getAcceptedClaims, getReimbursedClaim } from "@/actions/claimActions";
 import ApprovedClaimsClient from "./ApprovedClaimsClient";
+import { ClaimStatus } from "@/backend/claims/claim";
 
 export default async function AcceptedClaimsPage() {
   const user = await getCurrentUser();
@@ -14,9 +13,22 @@ export default async function AcceptedClaimsPage() {
   }
 
   // Fetch real draft claims from database
-  const response = await getAcceptedClaims(parseInt(user.id));
-  const acceptedClaims = response.success ? response.claims || [] : [];
+  const responseAccepted = await getAcceptedClaims(parseInt(user.id));
+  const acceptedClaims = responseAccepted.success
+    ? responseAccepted.claims?.map((claim) => ({
+        ...claim,
+        status: "ACCEPTED" as const,
+      })) || []
+    : [];
 
-  // Pass the data to the client component
-  return <ApprovedClaimsClient claims={acceptedClaims} />;
+  const responseReimbursed = await getReimbursedClaim(parseInt(user.id));
+  const reimbursedClaims = responseReimbursed.success
+    ? responseReimbursed.claims?.map((claim) => ({
+        ...claim,
+        status: "REIMBURSED" as const,
+      })) || []
+    : [];
+
+  const claims = [...acceptedClaims, ...reimbursedClaims];
+  return <ApprovedClaimsClient claims={claims} />;
 }

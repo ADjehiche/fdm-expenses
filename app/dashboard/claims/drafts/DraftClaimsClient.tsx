@@ -156,6 +156,7 @@ export default function DraftClaimsClient({
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
+                          title="Submit Claim"
                           variant="outline"
                           size="icon"
                           onClick={() => handleSubmit(claim.id)}
@@ -191,13 +192,19 @@ export default function DraftClaimsClient({
                             </span>
                           )}
                         </Button>
-                        <Button variant="ghost" size="icon" asChild>
+                        <Button
+                          title="edit claim"
+                          variant="ghost"
+                          size="icon"
+                          asChild
+                        >
                           <Link href={`/dashboard/claims/edit/${claim.id}`}>
                             <Edit className="h-4 w-4" />
                             <span className="sr-only">Edit</span>
                           </Link>
                         </Button>
                         <Button
+                          title="Delete claim"
                           variant="ghost"
                           size="icon"
                           className="cursor-pointer"

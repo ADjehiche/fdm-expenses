@@ -754,6 +754,39 @@ export class DatabaseManager {
     });
   }
 
+  async getAllReimbursedClaims(): Promise<Claim[]> {
+    const result = await db
+      .select()
+      .from(claimsTable)
+      .where(eq(claimsTable.status, "Reimbursed"));
+    if (!result) return [];
+
+    return result.map((row) => {
+      return new Claim({
+        id: row.id,
+        employeeId: row.employeeId,
+
+        amount: row.amount,
+        attemptCount: row.attemptCount,
+        status: row.status as ClaimStatus,
+        feedback: row.feedback,
+        evidence: this.getAllClaimEvidence(row.id),
+
+        accountName: row.accountName,
+        accountNumber: row.accountNumber,
+        sortCode: row.sortCode,
+
+        title: row.title,
+        description: row.description,
+        category: row.category,
+        currency: row.currency,
+
+        createdAt: row.createdAt,
+        lastUpdated: row.lastUpdated,
+      });
+    });
+  }
+
   async getAllAcceptedClaims(): Promise<Claim[]> {
     const result = await db
       .select()
@@ -898,6 +931,36 @@ export class DatabaseManager {
     }
     const updateTime = await this.updateClaimLastUpdated(claimId);
     if (!updateTime) return false;
+    return result.length === 1;
+  }
+
+  async updateClaimDetails(
+    claimId: number,
+    title: string,
+    description: string,
+    amount: number,
+    category: string,
+    currency: string
+  ): Promise<boolean> {
+    const result = await db
+      .update(claimsTable)
+      .set({
+        title: title,
+        description: description,
+        amount: amount,
+        category: category,
+        currency: currency,
+      })
+      .where(eq(claimsTable.id, claimId))
+      .returning();
+
+    if (!result) {
+      return false;
+    }
+
+    const updateTime = await this.updateClaimLastUpdated(claimId);
+    if (!updateTime) return false;
+
     return result.length === 1;
   }
 
@@ -1054,37 +1117,38 @@ export class DatabaseManager {
         return users;
     }
   /**
-   * Handles deleting a claim from the database. 
-   * 
+   * Handles deleting a claim from the database.
+   *
    * Throws 3 errors:
    * - Claim doesn't exist
    * - Claim ID not a Draft claim
    * - Unspecified error, delete failed
-   * 
+   *
    * @param userId User ID whose claim is being deleted.
    * @param claimId The specified claim to delete.
    */
-    async deleteDraftClaim(userId: number, claimId: number) {
-        // check if exists
-        const claimRows = await this.getOwnClaimsByStatus(userId, ClaimStatus.DRAFT);
+  async deleteDraftClaim(userId: number, claimId: number) {
+    // check if exists
+    const claimRows = await this.getOwnClaimsByStatus(
+      userId,
+      ClaimStatus.DRAFT
+    );
 
-        if (!claimRows) {
-            // throw Error doesn't exist
-            throw new Error("Claim doesn't exist!");
-        }
-        // check if draft
+    if (!claimRows) {
+      // throw Error doesn't exist
+      throw new Error("Claim doesn't exist!");
+    }
+    // check if draft
 
-        if (claimRows[0].getStatus() !== ClaimStatus.DRAFT) {
-            // throw Error claimID specified not a draft
-            throw new Error("Claim ID Specified is not a Draft claim!");
-        }
-
-        try {
-            await db.delete(claimsTable).where(eq(claimsTable.id, claimId))
-        } catch (error) {
-            throw new Error("Unspecified error, delete failed. ")
-        }
-
+    if (claimRows[0].getStatus() !== ClaimStatus.DRAFT) {
+      // throw Error claimID specified not a draft
+      throw new Error("Claim ID Specified is not a Draft claim!");
     }
 
+    try {
+      await db.delete(claimsTable).where(eq(claimsTable.id, claimId));
+    } catch (error) {
+      throw new Error("Unspecified error, delete failed. ");
+    }
+  }
 }
