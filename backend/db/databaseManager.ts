@@ -12,12 +12,19 @@ import { Consultant } from "../employee/consultant";
 import bcrypt from "bcrypt";
 import fs from "fs";
 
+/**
+ * Used to represent the database as a phyiscial class. 
+ */
 export class DatabaseManager {
     static #instance: DatabaseManager;
     private fileStoragePath = "./backend/db/fileStorage"
 
     private constructor() { }
 
+    /**
+     * 
+     * @returns A DatabaseManager instance
+     */
     public static getInstance(): DatabaseManager {
         if (!this.#instance) {
             this.#instance = new DatabaseManager();
@@ -67,6 +74,7 @@ export class DatabaseManager {
         return this.getAccount(insert[0].id);
     }
 
+    /* User Searching */
     public async getAllAccounts(): Promise<User[]> {
         try {
             const userRows = await db.select().from(usersTable);
@@ -98,7 +106,7 @@ export class DatabaseManager {
         }
     }
 
-    async getUsersForRegion(region: string): Promise<User[]> {
+    async getUsersByRegion(region: string): Promise<User[]> {
         const userRows = await db.select().from(usersTable).where(eq(usersTable.region, region));
         const users = []
         for (let i = 0; i < userRows.length; i++) {
@@ -123,6 +131,31 @@ export class DatabaseManager {
         return users;
     }
 
+    /**
+     * This function searches for subsections of the search string across the user database, and sorts them on length of match. 
+     * 
+     * EG: getUsersByName("smith") will return names:
+     *  smith
+     *  smeagol
+     *  sarah
+     * 
+     * @param searchString search parameter names get compared against users first and family name
+     * @returns An ordered array, lower index means User's name matches well with search parameter. 
+     */
+    async getUserByName(searchString: string) : Promise<User[]> {
+        const users = await this.getAllAccounts()
+
+        // sort by rank from name 
+        users.sort((a, b) => {
+
+            return matchUserName(a, searchString) - matchUserName(b, searchString);
+        })
+
+        return users;
+    }
+
+
+    /* User Management */
     async addAccount(user: User, password: string): Promise<User | null> {
         const insert = await db.insert(usersTable).values({
             firstName: user.getFirstName(),
@@ -155,30 +188,20 @@ export class DatabaseManager {
         })
     }
 
-    async getEmployeeRole(userId: number, employeeType: EmployeeType): Promise<EmployeeRole | null> {
-        let employeeRole: EmployeeRole | null = null;
-        switch (employeeType) {
-            case EmployeeType.LineManager:
-                const employees = await this.getManagersEmployees(userId);
-                employeeRole = new LineManager(userId, employees);
-                break;
-            case EmployeeType.Administrator:
-                employeeRole = new Administrator(userId);
-                break;
-            case EmployeeType.GeneralStaff:
-                employeeRole = new GeneralStaff(userId);
-                break;
-            case EmployeeType.PayrollOfficer:
-                employeeRole = new PayrollOfficer(userId);
-                break;
-            case EmployeeType.Consultant:
-                employeeRole = new Consultant(userId);
-                break;
-            default:
-                console.error("DatabaseManager", "Unknown employee type");
+    async deleteAccount(userId: number): Promise<boolean> {
+        const deleteUser = await db.delete(usersTable).where(and(eq(usersTable.id, userId), not(eq(usersTable.employeeRole, "Administrator")))).returning();
+        if (deleteUser.length === 0) {
+            return false;
         }
 
-        return employeeRole
+        if (deleteUser[0].lineManagerId) {
+            const deleteLineManager = await db.delete(lineManagersTable).where(or(eq(lineManagersTable.lineManagerId, userId), eq(lineManagersTable.employeeId, userId))).returning();
+            if (deleteLineManager.length === 0) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     async getAccount(userId: number): Promise<User | null> {
@@ -212,21 +235,32 @@ export class DatabaseManager {
         })
     }
 
-    async deleteAccount(userId: number): Promise<boolean> {
-        const deleteUser = await db.delete(usersTable).where(and(eq(usersTable.id, userId), not(eq(usersTable.employeeRole, "Administrator")))).returning();
-        if (deleteUser.length === 0) {
-            return false;
+    async getEmployeeRole(userId: number, employeeType: EmployeeType): Promise<EmployeeRole | null> {
+        let employeeRole: EmployeeRole | null = null;
+        switch (employeeType) {
+            case EmployeeType.LineManager:
+                const employees = await this.getManagersEmployees(userId);
+                employeeRole = new LineManager(userId, employees);
+                break;
+            case EmployeeType.Administrator:
+                employeeRole = new Administrator(userId);
+                break;
+            case EmployeeType.GeneralStaff:
+                employeeRole = new GeneralStaff(userId);
+                break;
+            case EmployeeType.PayrollOfficer:
+                employeeRole = new PayrollOfficer(userId);
+                break;
+            case EmployeeType.Consultant:
+                employeeRole = new Consultant(userId);
+                break;
+            default:
+                console.error("DatabaseManager", "Unknown employee type");
         }
 
-        if (deleteUser[0].lineManagerId) {
-            const deleteLineManager = await db.delete(lineManagersTable).where(or(eq(lineManagersTable.lineManagerId, userId), eq(lineManagersTable.employeeId, userId))).returning();
-            if (deleteLineManager.length === 0) {
-                return false;
-            }
-        }
-
-        return true;
+        return employeeRole
     }
+
 
     async getManagersEmployees(managerUserId: number): Promise<User[]> {
         const employees = await db.select().from(lineManagersTable).where(eq(lineManagersTable.lineManagerId, managerUserId)).innerJoin(usersTable, eq(lineManagersTable.employeeId, usersTable.id));
@@ -392,79 +426,10 @@ export class DatabaseManager {
         return updateUser.length === 1;
     }
 
-    // Claim table
 
-    async addClaim(claim: Claim): Promise<Claim | null> {
-        const insert = await db.insert(claimsTable).values({
-            employeeId: claim.getEmployeeId(),
-            attemptCount: claim.getAttemptCount(),
-            status: claim.getStatus() as typeof claimsTable.$inferInsert["status"],
 
-            amount: claim.getAmount(),
-            feedback: claim.getFeedback(),
 
-            title: claim.getTitle(),
-            description: claim.getDescription(),
-            category: claim.getCategory(),
-            currency: claim.getCurrency(),
-
-            createdAt: claim.getCreatedAt(),
-            lastUpdated: claim.getLastUpdated(),
-        }).returning();
-        if (insert.length !== 1) {
-            return null;
-        }
-        return new Claim({
-            id: insert[0].id,
-            amount: insert[0].amount,
-            employeeId: insert[0].employeeId,
-            attemptCount: insert[0].attemptCount,
-            status: insert[0].status as ClaimStatus,
-            feedback: insert[0].feedback,
-            evidence: [],
-
-            accountName: insert[0].accountName,
-            accountNumber: insert[0].accountNumber,
-            sortCode: insert[0].sortCode,
-
-            title:insert[0].title,
-            description:insert[0].description,
-            category:insert[0].category,
-            currency:insert[0].currency,
-
-            createdAt: insert[0].createdAt,
-            lastUpdated: insert[0].lastUpdated,
-        });
-    }
-
-    async getClaim(claimId: number): Promise<Claim | null> {
-        const result = await db.select().from(claimsTable).where(eq(claimsTable.id, claimId));
-        if (!result || result.length > 1) return null
-
-        return new Claim({
-            id: result[0].id,
-            employeeId: result[0].employeeId,
-
-            amount: result[0].amount,
-            attemptCount: result[0].attemptCount,
-            status: result[0].status as ClaimStatus,
-            feedback: result[0].feedback,
-            evidence: this.getAllClaimEvidence(result[0].id),
-
-            accountName: result[0].accountName,
-            accountNumber: result[0].accountNumber,
-            sortCode: result[0].sortCode,
-
-            title:result[0].title,
-            description:result[0].description,
-            category:result[0].category,
-            currency:result[0].currency,
-
-            createdAt: result[0].createdAt,
-            lastUpdated: result[0].lastUpdated,
-        })
-    }
-
+    /* Claim Searching */
 
     async getClaimsByManager(managerId: number): Promise<Claim[]> {
         const result = await db.select().from(claimsTable).innerJoin(lineManagersTable, eq(claimsTable.employeeId, lineManagersTable.employeeId)).where(eq(lineManagersTable.lineManagerId, managerId));
@@ -572,6 +537,79 @@ export class DatabaseManager {
         return result.length === 1;
     }
 
+
+    /* Claim Management */
+    async addClaim(claim: Claim): Promise<Claim | null> {
+        const insert = await db.insert(claimsTable).values({
+            employeeId: claim.getEmployeeId(),
+            attemptCount: claim.getAttemptCount(),
+            status: claim.getStatus() as typeof claimsTable.$inferInsert["status"],
+
+            amount: claim.getAmount(),
+            feedback: claim.getFeedback(),
+
+            title: claim.getTitle(),
+            description: claim.getDescription(),
+            category: claim.getCategory(),
+            currency: claim.getCurrency(),
+
+            createdAt: claim.getCreatedAt(),
+            lastUpdated: claim.getLastUpdated(),
+        }).returning();
+        if (insert.length !== 1) {
+            return null;
+        }
+        return new Claim({
+            id: insert[0].id,
+            amount: insert[0].amount,
+            employeeId: insert[0].employeeId,
+            attemptCount: insert[0].attemptCount,
+            status: insert[0].status as ClaimStatus,
+            feedback: insert[0].feedback,
+            evidence: [],
+
+            accountName: insert[0].accountName,
+            accountNumber: insert[0].accountNumber,
+            sortCode: insert[0].sortCode,
+
+            title:insert[0].title,
+            description:insert[0].description,
+            category:insert[0].category,
+            currency:insert[0].currency,
+
+            createdAt: insert[0].createdAt,
+            lastUpdated: insert[0].lastUpdated,
+        });
+    }
+
+    async getClaim(claimId: number): Promise<Claim | null> {
+        const result = await db.select().from(claimsTable).where(eq(claimsTable.id, claimId));
+        if (!result || result.length > 1) return null
+
+        return new Claim({
+            id: result[0].id,
+            employeeId: result[0].employeeId,
+
+            amount: result[0].amount,
+            attemptCount: result[0].attemptCount,
+            status: result[0].status as ClaimStatus,
+            feedback: result[0].feedback,
+            evidence: this.getAllClaimEvidence(result[0].id),
+
+            accountName: result[0].accountName,
+            accountNumber: result[0].accountNumber,
+            sortCode: result[0].sortCode,
+
+            title:result[0].title,
+            description:result[0].description,
+            category:result[0].category,
+            currency:result[0].currency,
+
+            createdAt: result[0].createdAt,
+            lastUpdated: result[0].lastUpdated,
+        })
+    }
+
     async updateClaimLastUpdated(claimId: number): Promise<boolean> {
         const result = await db.update(claimsTable).set({
             lastUpdated: new Date()
@@ -581,7 +619,6 @@ export class DatabaseManager {
         }
         return result.length === 1;
     }
-
 
     async updateClaimFeedback(claimId: number, feedback: string): Promise<boolean> {
         const result = await db.update(claimsTable).set({
@@ -723,3 +760,34 @@ export class DatabaseManager {
     }
 
 }
+
+
+/**
+ * Rank returned:
+ * 
+ * Higher rank means two things:
+ *  - early match
+ *  - longer match
+ * 
+ * 
+ * @param string string you match the expression against
+ * @param expression string you want to know the match for
+ * @returns match rank, higher means: larger match earlier on, longer match
+ */
+const  getMatch =  (string: string, expression: string) : number => {
+    let rank = 1;
+
+    // TODO implement comparing algorithm
+
+    return rank;
+}
+
+const matchUserName =  (user: User, expression:string) : number => {
+    return  getMatch(user.getFirstName(), expression) *  getMatch(user.getFamilyName(), expression);
+
+} 
+
+const matchUserEmail =   (user: User, expression:string) : number => {
+    return  getMatch(user.getEmail(), expression);
+
+} 
