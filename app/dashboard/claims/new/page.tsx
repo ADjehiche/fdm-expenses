@@ -92,21 +92,14 @@ export default function NewExpenseClaimPage() {
         throw new Error("User not authenticated");
       }
 
-      // Format the claim metadata to include all relevant information
-      const claimMetadata = JSON.stringify({
-        description: values.description,
-        date: values.date,
-      });
-
-      // Create claim using server action
+      // Create claim using server action with direct column values
       const response = await createClaim({
         employeeId: parseInt(user.id),
         amount: parseFloat(values.amount),
-        metadata: claimMetadata,
         title: values.title,
         description: values.description,
-        category:values.category,
-        currency:values.currency,
+        category: values.category,
+        currency: values.currency,
       });
 
       if (!response.success || !response.claimId) {
