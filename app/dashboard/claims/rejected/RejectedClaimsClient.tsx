@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Edit, Send, Trash2 } from "lucide-react";
+import { Edit, Send, Eye } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -199,13 +199,15 @@ export default function RejectedClaimsClient({
                           </Link>
                         </Button>
                         <Button
-                          title="Delete claim"
+                          title="Edit claim"
                           variant="ghost"
                           size="icon"
-                          className="cursor-pointer"
+                          asChild
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                          <span className="sr-only">Delete</span>
+                          <Link href={`/dashboard/claims/view/${claim.id}`}>
+                            <Eye className="h-4 w-4" />
+                            <span className="sr-only">View</span>
+                          </Link>
                         </Button>
                       </div>
                     </TableCell>
