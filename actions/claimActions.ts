@@ -3,6 +3,7 @@
 import { DatabaseManager } from "@/backend/db/databaseManager";
 import { Claim, ClaimStatus } from "@/backend/claims/claim";
 import { EmployeeType } from "@/backend/employee/employeeRole";
+import { get } from "http";
 
 /**
  * Server action to create a new claim and save it to the database
@@ -149,6 +150,144 @@ export async function getDraftClaims(employeeId: number): Promise<{
         date,
         amount: claim.getAmount(),
         category,
+        lastUpdated: lastUpdatedStr,
+      };
+    });
+
+    return { success: true, claims: formattedClaims };
+  } catch (error) {
+    console.error("Error fetching draft claims:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
+
+export async function getAcceptedClaims(employeeId: number): Promise<{
+  success: boolean;
+  claims?: Array<{
+    id: number;
+    title: string;
+    date: string;
+    amount: number;
+    category: string;
+    lastUpdated: string; // Changed from Date to string to ensure safe serialization
+  }>;
+  error?: string;
+}> {
+  try {
+    // Get database instance
+    const db = DatabaseManager.getInstance();
+
+    // Fetch draft claims for this employee
+    const claims = await db.getOwnClaimsByStatus(
+      employeeId,
+      ClaimStatus.ACCEPTED
+    );
+
+    if (!claims) {
+      return { success: true, claims: [] };
+    }
+
+    // Transform the claims to the format needed by the UI
+    const formattedClaims = claims.map((claim) => {
+      // Use direct column values instead of parsing from feedback
+      const title = claim.getTitle() || "Expense Claim";
+      const category = claim.getCategory() || "";
+      // For date, we'll use createdAt formatted as a string
+      const date = new Date(claim.getCreatedAt()).toLocaleDateString();
+
+      // Format the lastUpdated date as an ISO string to ensure safe serialization
+      let lastUpdatedStr = "";
+      try {
+        const lastUpdated = claim.getLastUpdated();
+        lastUpdatedStr =
+          lastUpdated instanceof Date
+            ? lastUpdated.toISOString()
+            : new Date(lastUpdated).toISOString();
+      } catch (e) {
+        console.error("Error formatting lastUpdated date:", e);
+        lastUpdatedStr = new Date().toISOString(); // Fallback to current date
+      }
+
+      return {
+        id: claim.getId(),
+        title,
+        date,
+        amount: claim.getAmount(),
+        category,
+        lastUpdated: lastUpdatedStr,
+      };
+    });
+
+    return { success: true, claims: formattedClaims };
+  } catch (error) {
+    console.error("Error fetching draft claims:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
+
+export async function getRejectedClaims(employeeId: number): Promise<{
+  success: boolean;
+  claims?: Array<{
+    id: number;
+    title: string;
+    date: string;
+    amount: number;
+    feedback: string;
+    category: string;
+    lastUpdated: string;
+  }>;
+  error?: string;
+}> {
+  try {
+    // Get database instance
+    const db = DatabaseManager.getInstance();
+
+    // Fetch draft claims for this employee
+    const claims = await db.getOwnClaimsByStatus(
+      employeeId,
+      ClaimStatus.REJECTED
+    );
+
+    if (!claims) {
+      return { success: true, claims: [] };
+    }
+
+    // Transform the claims to the format needed by the UI
+    const formattedClaims = claims.map((claim) => {
+      // Use direct column values instead of parsing from feedback
+      const title = claim.getTitle() || "Expense Claim";
+      const category = claim.getCategory() || "";
+      // For date, we'll use createdAt formatted as a string
+      const date = new Date(claim.getCreatedAt()).toLocaleDateString();
+
+      // Format the lastUpdated date as an ISO string to ensure safe serialization
+      let lastUpdatedStr = "";
+      try {
+        const lastUpdated = claim.getLastUpdated();
+        lastUpdatedStr =
+          lastUpdated instanceof Date
+            ? lastUpdated.toISOString()
+            : new Date(lastUpdated).toISOString();
+      } catch (e) {
+        console.error("Error formatting lastUpdated date:", e);
+        lastUpdatedStr = new Date().toISOString(); // Fallback to current date
+      }
+
+      return {
+        id: claim.getId(),
+        title,
+        date,
+        amount: claim.getAmount(),
+        category,
+        feedback: claim.getFeedback() || "",
         lastUpdated: lastUpdatedStr,
       };
     });

@@ -109,7 +109,7 @@ export default function PendingClaimsReview({
       [claimId]: feedback,
     }));
   };
-
+  console.log(claims);
   return (
     <Card className="w-full">
       <CardHeader>
@@ -122,7 +122,7 @@ export default function PendingClaimsReview({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
+                <TableHead>Title</TableHead>
                 <TableHead>Employee</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Amount</TableHead>
@@ -133,7 +133,7 @@ export default function PendingClaimsReview({
             <TableBody>
               {claims.map((claim) => (
                 <TableRow key={claim.id}>
-                  <TableCell className="font-medium">{claim.id}</TableCell>
+                  <TableCell className="font-medium">{claim.title}</TableCell>
                   <TableCell>{claim.employeeId}</TableCell>
                   <TableCell>{formatDate(claim.lastUpdated)}</TableCell>
                   <TableCell>${claim.amount.toFixed(2)}</TableCell>
@@ -172,7 +172,7 @@ export default function PendingClaimsReview({
                           onChange={(e) =>
                             handleFeedbackChange(claim.id, e.target.value)
                           }
-                          className="min-h-[80px]"
+                          className="min-h-[80px] bg-white"
                         />
                         <Button
                           onClick={() => handleReject(claim.id)}

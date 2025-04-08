@@ -25,6 +25,8 @@ import {
   getPendingClaims,
   getRecentClaims,
   getDraftClaims,
+  getAcceptedClaims,
+  getRejectedClaims,
 } from "@/actions/claimActions";
 
 import { useUser } from "@/app/contexts/UserContext";
@@ -68,12 +70,21 @@ export default function dashboardPage() {
         ? (pendingResponse.claims || []).length
         : 0;
 
-      // For now, we'll use dummy counts for approved and rejected until those endpoints are added
+      const acceptedResponse = await getAcceptedClaims(userId);
+      const acceptedCount = acceptedResponse.success
+        ? (acceptedResponse.claims || []).length
+        : 0;
+
+      const rejectedResponse = await getRejectedClaims(userId);
+      const rejectedCount = rejectedResponse.success
+        ? (rejectedResponse.claims || []).length
+        : 0;
+
       setCounts({
         drafts: draftCount,
         pending: pendingCount,
-        approved: 0,
-        rejected: 0,
+        approved: acceptedCount,
+        rejected: rejectedCount,
       });
 
       setIsLoading(false);
