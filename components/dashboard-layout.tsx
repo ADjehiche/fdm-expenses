@@ -130,13 +130,13 @@ export default function DashboardLayout({
               </>
             )}
 
-            {userRole === "payrollOfficer" && (
+            {userRole === "Payroll Officer" && (
               <>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2 px-3">
                   Payroll
                 </p>
                 <NavItem
-                  href="/dashboard/payroll/claims"
+                  href="/dashboard/reimburse"
                   icon={<CreditCard className="h-4 w-4" />}
                   label="Process Payments"
                 />
