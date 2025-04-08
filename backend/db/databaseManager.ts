@@ -1,5 +1,5 @@
 import { eq, and, or, not } from "drizzle-orm";
-import { EmployeeClassification, User } from "../user";
+import { EmployeeClassification, matchUserEmail, matchUserName, User } from "../user";
 import { db } from "./drizzle";
 import { claimsTable, lineManagersTable, usersTable } from "./schema";
 import { GeneralStaff } from "../employee/generalStaff";
@@ -12,6 +12,9 @@ import { Consultant } from "../employee/consultant";
 import bcrypt from "bcryptjs";
 import fs from "fs";
 
+/**
+ * Used to represent the database as a phyiscial class. 
+ */
 export class DatabaseManager {
   static #instance: DatabaseManager;
   private fileStoragePath = "./backend/db/fileStorage";
@@ -1080,6 +1083,39 @@ export class DatabaseManager {
     }
   }
 
+
+    /**
+     * This function searches for subsections of the search string across the user database, and sorts them on length of match. 
+     * 
+     * EG: getUsersByName("smith") will return names:
+     *  smith
+     *  smeagol
+     *  sarah
+     * 
+     * @param searchString search parameter names get compared against users first and family name
+     * @returns An ordered array, lower index means User's name matches well with search parameter. 
+     */
+    async getUsersByName(searchString: string) : Promise<User[]> {
+        const users = await this.getAllAccounts()
+
+        // sort by rank from name 
+        users.sort((a, b) => {
+            return matchUserName(a, searchString) - matchUserName(b, searchString);
+        })
+
+        return users;
+    }
+
+    async getUsersByEmail(searchString: string)  : Promise<User[]> {
+        const users = await this.getAllAccounts()
+
+        // sort by rank from name 
+        users.sort((a, b) => {
+            return matchUserEmail(a, searchString) - matchUserEmail(b, searchString);
+        })
+
+        return users;
+    }
   /**
    * Handles deleting a claim from the database.
    *

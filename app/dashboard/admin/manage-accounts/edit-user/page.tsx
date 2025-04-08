@@ -1,14 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { useActionState } from "react";
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { fetchUserById } from './EditAccount';
 
-// import { CreateAccountAdmin } from "../../../../actions/createAccount";
-import { CreateAccountAdmin } from "./CreateAccount";
 import { UserPlus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -29,92 +25,59 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-const CreateAccountSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  familyName: z.string().min(1, "Family name is required"),
-  email: z.string().email("Valid email is required"),
-  plainPassword: z.string().min(6, "Password must be at least 6 characters"),
-  region: z.string().min(1, "Region is required"),
-  employeeClassification: z.string().min(1, "Classification is required"),
-  employeeRole: z.string().min(1, "Role is required"),
-  lineManagerId: z.string().optional(),
-});
-
-const initialState = {
-  success: false,
-  message: "",
-};
-
-function CreateAccountPage() {
-  const router = useRouter();
-  const [status, formAction] = useActionState(CreateAccountAdmin, initialState);
+const EditUserPage = () => {
+  const searchParams = useSearchParams();
+  const [userData, setUserData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const form = useForm();
+
+  const { register, handleSubmit, setValue } = useForm();
 
   useEffect(() => {
-    if (status.success) {
-      // Wait a moment to show success message before redirecting
-      const timer = setTimeout(() => {
-        router.push("/dashboard/admin/manage-accounts");
-      }, 1500);
-      return () => clearTimeout(timer);
+    const userID = searchParams.get('userID');
+    if (userID) {
+      fetchUserById(parseInt(userID)).then((data) => {
+        if (data) {
+          const user = data[0];
+          console.log('Fetched User:', user);
+          setUserData(data);
+          setValue('firstName', user.firstName);
+          setValue('familyName', user.familyName);
+          setValue('email', user.email);
+          // setValue('plainPassword', user.plainPassword);
+          setValue('employeeRole', user.employeeRole.employeeType);
+          setValue('region', user.region);
+          setValue('employeeClassification', user.employeeClassification);
+          setValue('lineManagerId', user.employeeRole.lineManager);
+        }
+      });
     }
-  }, [status.success, router]);
+  }, [searchParams, setValue]);
 
-  const form = useForm<z.infer<typeof CreateAccountSchema>>({
-    resolver: zodResolver(CreateAccountSchema),
-    defaultValues: {
-      firstName: "",
-      familyName: "",
-      email: "",
-      plainPassword: "",
-      region: "",
-      employeeClassification: "",
-      employeeRole: "",
-      lineManagerId: "",
-    },
-  });
+  const onSubmit = (data: any) => {
+    console.log('Updated User Data:', data);
+  };
 
   return (
     <div className="space-y-6 text-black">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">
-          Create New Account
-        </h1>
+        <h1 className="text-2xl font-bold tracking-tight">Edit User</h1>
       </div>
 
       <Card className="border-0 shadow-md w-full">
         <CardHeader className="bg-fdm-blue text-white rounded-t-lg">
           <CardTitle className="flex items-center text-black">
             <UserPlus className="mr-2 h-5 w-5" />
-            Account Details
+            User Details
           </CardTitle>
           <CardDescription className="text-black">
-            Fill in the details to create a new user account
+            Update the information of the selected user
           </CardDescription>
         </CardHeader>
 
         <CardContent className="pt-6">
-          {status.message && (
-            <div
-              className={`p-3 mb-6 rounded-md text-sm ${
-                status.success
-                  ? "bg-green-50 text-green-800 border border-green-200"
-                  : "bg-red-50 text-red-800 border border-red-200"
-              }`}
-            >
-              <p>{status.message}</p>
-            </div>
-          )}
-
           <Form {...form}>
-            <form
-              action={async (formData) => {
-                setIsLoading(true);
-                await formAction(formData);
-                setIsLoading(false);
-              }}
-              className="space-y-4"
-            >
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -123,9 +86,9 @@ function CreateAccountPage() {
                     <FormItem>
                       <FormLabel>First Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="First Name" {...field} />
+                        <Input placeholder="First Name"{...register('firstName')} />
                       </FormControl>
-                      <FormMessage className="text-red-500 font-medium" />
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -137,9 +100,9 @@ function CreateAccountPage() {
                     <FormItem>
                       <FormLabel>Family Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Family Name" {...field} />
+                        <Input placeholder="Family Name"{...register('familyName')} />
                       </FormControl>
-                      <FormMessage className="text-red-500 font-medium" />
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -152,30 +115,26 @@ function CreateAccountPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="Email" {...field} />
+                      <Input type="email" placeholder="Email"{...register('email')} />
                     </FormControl>
-                    <FormMessage className="text-red-500 font-medium" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <FormField
+              {/* <FormField
                 control={form.control}
                 name="plainPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>New Password</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Password"
-                        {...field}
-                      />
+                      <Input type="password" placeholder="Leave blank to keep current password"{...register('plainPassword')} />
                     </FormControl>
-                    <FormMessage className="text-red-500 font-medium" />
+                    <FormMessage />
                   </FormItem>
                 )}
-              />
+              /> */}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
@@ -185,9 +144,9 @@ function CreateAccountPage() {
                     <FormItem>
                       <FormLabel>Region</FormLabel>
                       <FormControl>
-                        <Input placeholder="Region" {...field} />
+                        <Input placeholder="Region"{...register('region')} />
                       </FormControl>
-                      <FormMessage className="text-red-500 font-medium" />
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -201,9 +160,9 @@ function CreateAccountPage() {
                       <FormControl>
                         <select
                           className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          {...field}
+                          {...register('employeeClassification')}
                         >
-                          <option value="">Select Classification</option>
+                          <option value=""></option>
                           <option value="Internal">Internal</option>
                           <option value="External">External</option>
                         </select>
@@ -212,9 +171,7 @@ function CreateAccountPage() {
                     </FormItem>
                   )}
                 />
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="employeeRole"
@@ -223,25 +180,23 @@ function CreateAccountPage() {
                       <FormLabel>Role</FormLabel>
                       <FormControl>
                         <select
-                          className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          {...field}
+                          className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm"
+                          {...register('employeeRole')}
                         >
-                          <option value="">Select Role</option>
+                          <option value=""></option>
                           <option value="Administrator">Administrator</option>
-                          <option value="Payroll Officer">
-                            Payroll Officer
-                          </option>
+                          <option value="Payroll Officer">Payroll Officer</option>
                           <option value="Line Manager">Line Manager</option>
                           <option value="General Staff">Staff</option>
                           <option value="Consultant">Consultant</option>
                         </select>
                       </FormControl>
-                      <FormMessage className="text-red-500 font-medium" />
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <FormField
+                  <FormField
                   control={form.control}
                   name="lineManagerId"
                   render={({ field }) => (
@@ -251,8 +206,7 @@ function CreateAccountPage() {
                         <Input
                           type="number"
                           min="1"
-                          placeholder="Line Manager ID (if any)"
-                          {...field}
+                          placeholder=""{...register('lineManagerId')}
                         />
                       </FormControl>
                       <FormMessage className="text-red-500 font-medium" />
@@ -267,7 +221,7 @@ function CreateAccountPage() {
                   className="bg-[#c3fa04] hover:bg-[#c3fa04]/90 text-black font-medium w-full"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Creating Account..." : "Create Account"}
+                  {isLoading ? "Saving Changes..." : "Save Changes"}
                 </Button>
               </CardFooter>
             </form>
@@ -276,6 +230,6 @@ function CreateAccountPage() {
       </Card>
     </div>
   );
-}
+};
 
-export default CreateAccountPage;
+export default EditUserPage;

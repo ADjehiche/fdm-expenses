@@ -104,3 +104,44 @@ export enum EmployeeClassification {
     Internal="Internal",
     External="External"
 }
+
+
+
+
+/**
+ * Rank returned:
+ * 
+ * Higher rank means two things:
+ *  - early match
+ *  - longer match
+ * 
+ * 
+ * @param string string you match the expression against
+ * @param expression string you want to know the match for
+ * @returns match rank, higher means: larger match earlier on, longer match
+ */
+const  getMatch =  (string: string, expression: string) : number => {
+    let rank = 1;
+
+    for (let i=expression.length; i>0; i--) {
+        const subexpression = expression.substring(0, i);
+        const result = string.search(subexpression);
+
+        if (result > -1) {
+        rank = rank>subexpression.length ? rank : subexpression.length
+        }
+    }
+
+    return rank;
+}
+
+export const matchUserName =  (user: User, expression:string) : number => {
+    return  getMatch(user.getFirstName(), expression) *  getMatch(user.getFamilyName(), expression);
+
+} 
+
+export const matchUserEmail =   (user: User, expression:string) : number => {
+    return  getMatch(user.getEmail(), expression);
+
+} 
+
