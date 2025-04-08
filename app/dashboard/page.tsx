@@ -30,6 +30,7 @@ import {
 } from "@/actions/claimActions";
 
 import { useUser } from "@/app/contexts/UserContext";
+import DashboardSkeleton from "@/components/skeleton/DashboardSkeleton";
 
 export default function dashboardPage() {
   const { user, loading } = useUser();
@@ -95,7 +96,7 @@ export default function dashboardPage() {
     }
   }, [user]);
 
-  if (loading || isLoading) return <div className="text-white">Loading...</div>;
+  if (loading || isLoading) return <DashboardSkeleton />;
   if (!user) return <div>Not logged in</div>;
 
   return (

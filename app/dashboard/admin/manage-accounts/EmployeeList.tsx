@@ -1,6 +1,15 @@
-import React from 'react';
-import { SerializableUser } from './page';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+"use client";
+import React from "react";
+import { SerializableUser } from "./page";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Edit, Trash2 } from "lucide-react";
@@ -26,7 +35,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ users }) => {
           </div>
         ) : (
           <Table>
-            <TableCaption>List of all employee accounts in the system</TableCaption>
+            <TableCaption>
+              List of all employee accounts in the system
+            </TableCaption>
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>
@@ -45,9 +56,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ users }) => {
                     {user.firstName} {user.familyName}
                   </TableCell>
                   <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    {user.employeeRole.employeeType}
-                  </TableCell>
+                  <TableCell>{user.employeeRole.employeeType}</TableCell>
                   <TableCell>{user.region}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
