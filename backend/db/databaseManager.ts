@@ -1016,4 +1016,39 @@ export class DatabaseManager {
       return false;
     }
   }
+
+  /**
+   * Handles deleting a claim from the database. 
+   * 
+   * Throws 3 errors:
+   * - Claim doesn't exist
+   * - Claim ID not a Draft claim
+   * - Unspecified error, delete failed
+   * 
+   * @param userId User ID whose claim is being deleted.
+   * @param claimId The specified claim to delete.
+   */
+    async deleteDraftClaim(userId: number, claimId: number) {
+        // check if exists
+        const claimRows = await this.getOwnClaimsByStatus(userId, ClaimStatus.DRAFT);
+
+        if (!claimRows) {
+            // throw Error doesn't exist
+            throw new Error("Claim doesn't exist!");
+        }
+        // check if draft
+
+        if (claimRows[0].getStatus() !== ClaimStatus.DRAFT) {
+            // throw Error claimID specified not a draft
+            throw new Error("Claim ID Specified is not a Draft claim!");
+        }
+
+        try {
+            await db.delete(claimsTable).where(eq(claimsTable.id, claimId))
+        } catch (error) {
+            throw new Error("Unspecified error, delete failed. ")
+        }
+
+    }
+
 }
