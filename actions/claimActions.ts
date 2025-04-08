@@ -3,10 +3,7 @@
 import { DatabaseManager } from "@/backend/db/databaseManager";
 import { Claim, ClaimStatus } from "@/backend/claims/claim";
 import { EmployeeType } from "@/backend/employee/employeeRole";
-<<<<<<< HEAD
-=======
 import { get } from "http";
->>>>>>> main
 
 /**
  * Server action to create a new claim and save it to the database
