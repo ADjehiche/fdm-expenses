@@ -107,7 +107,12 @@ export default function ApprovedClaimsClient({
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" asChild>
+                        <Button
+                          title="View"
+                          variant="ghost"
+                          size="icon"
+                          asChild
+                        >
                           <Link href={`/dashboard/claims/view/${claim.id}`}>
                             <Eye className="h-4 w-4" />
                             <span className="sr-only">View</span>

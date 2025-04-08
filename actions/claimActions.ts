@@ -539,6 +539,39 @@ export async function getSubmittedClaims(user: any): Promise<Array<Claim>> {
 }
 
 /**
+ * Server action to get all approved (accepted) claims for a payroll officer to review and reimburse
+ */
+export async function getApprovedClaims(user: any): Promise<Array<Claim>> {
+  try {
+    if (!user || !user.getEmployeeRole) {
+      console.error("No authenticated user found or invalid user object");
+      return [];
+    }
+
+    const employeeRole = user.getEmployeeRole();
+    if (
+      !employeeRole ||
+      employeeRole.getType() !== EmployeeType.PayrollOfficer
+    ) {
+      console.error(
+        "User is not a payroll officer or an invalid payroll officer object"
+      );
+      return [];
+    }
+
+    // Get database instance
+    const db = DatabaseManager.getInstance();
+
+    // Get all claims with ACCEPTED status
+    const acceptedClaims = await db.getAllAcceptedClaims();
+    return acceptedClaims || [];
+  } catch (error) {
+    console.error("Error fetching approved claims:", error);
+    return [];
+  }
+}
+
+/**
  * Server action to approve a claim
  */
 export async function approveClaimAction(claimId: number): Promise<boolean> {
@@ -562,6 +595,40 @@ export async function approveClaimAction(claimId: number): Promise<boolean> {
     return true;
   } catch (error) {
     console.error("Error approving claim:", error);
+    return false;
+  }
+}
+
+/**
+ * Server action to reimburse a claim
+ */
+export async function reimburseClaimAction(claimId: number): Promise<boolean> {
+  try {
+    const db = DatabaseManager.getInstance();
+    const claim = await db.getClaim(claimId);
+
+    if (!claim) {
+      console.error("Claim not found");
+      return false;
+    }
+
+    // Check that the claim is in ACCEPTED status
+    if (claim.getStatus() !== ClaimStatus.ACCEPTED) {
+      console.error("Only accepted claims can be reimbursed");
+      return false;
+    }
+
+    // Update the claim status to REIMBURSED
+    const result = await db.updateClaimStatus(claimId, ClaimStatus.REIMBURSED);
+
+    if (!result) {
+      console.error("Failed to reimburse claim");
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error reimbursing claim:", error);
     return false;
   }
 }
@@ -602,5 +669,64 @@ export async function rejectClaimAction(
   } catch (error) {
     console.error("Error rejecting claim:", error);
     return false;
+  }
+}
+
+/**
+ * Server action to update an existing claim
+ */
+export async function updateClaim(data: {
+  claimId: number;
+  employeeId: number;
+  amount: number;
+  title: string;
+  description: string;
+  category: string;
+  currency: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Get database instance
+    const db = DatabaseManager.getInstance();
+
+    // Get the existing claim
+    const claim = await db.getClaim(data.claimId);
+
+    if (!claim) {
+      return { success: false, error: "Claim not found" };
+    }
+
+    // Check if the user is authorized to update this claim
+    if (claim.getEmployeeId() !== data.employeeId) {
+      return {
+        success: false,
+        error: "You are not authorized to update this claim",
+      };
+    }
+
+    // Update the claim details
+    await db.updateClaimDetails(
+      data.claimId,
+      data.title,
+      data.description,
+      data.amount,
+      data.category,
+      data.currency
+    );
+
+    // Update the lastUpdated timestamp
+    const timestampResult = await db.updateClaimLastUpdated(data.claimId);
+
+    if (!timestampResult) {
+      console.warn("Failed to update timestamp for claim:", data.claimId);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating claim:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
+    };
   }
 }

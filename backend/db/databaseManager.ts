@@ -898,6 +898,36 @@ export class DatabaseManager {
     return result.length === 1;
   }
 
+  async updateClaimDetails(
+    claimId: number,
+    title: string,
+    description: string,
+    amount: number,
+    category: string,
+    currency: string
+  ): Promise<boolean> {
+    const result = await db
+      .update(claimsTable)
+      .set({
+        title: title,
+        description: description,
+        amount: amount,
+        category: category,
+        currency: currency,
+      })
+      .where(eq(claimsTable.id, claimId))
+      .returning();
+
+    if (!result) {
+      return false;
+    }
+
+    const updateTime = await this.updateClaimLastUpdated(claimId);
+    if (!updateTime) return false;
+
+    return result.length === 1;
+  }
+
   /**
    * Gets list of evidence file names for a claim
    */
