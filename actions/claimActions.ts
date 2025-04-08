@@ -2,6 +2,7 @@
 
 import { DatabaseManager } from "@/backend/db/databaseManager";
 import { Claim, ClaimStatus } from "@/backend/claims/claim";
+import { EmployeeType } from "@/backend/employee/employeeRole";
 
 /**
  * Server action to create a new claim and save it to the database
@@ -10,11 +11,10 @@ import { Claim, ClaimStatus } from "@/backend/claims/claim";
 export async function createClaim(data: {
   employeeId: number;
   amount: number;
-  metadata: string;
-  title:string;
-  description:string;
-  category:string;
-  currency:string;
+  title: string;
+  description: string;
+  category: string;
+  currency: string;
 }): Promise<{ success: boolean; claimId?: number; error?: string }> {
   try {
     // Create a new claim object
@@ -26,16 +26,16 @@ export async function createClaim(data: {
       attemptCount: 0,
       status: ClaimStatus.DRAFT,
       evidence: [], // Will add evidence files after claim is created
-      feedback: data.metadata,
+      feedback: "", // No longer storing metadata here, using an empty string
 
       accountName: null,
       accountNumber: null,
       sortCode: null,
 
-      title:data.title,
-      description:data.description,
-      category:data.category,
-      currency:data.currency,
+      title: data.title,
+      description: data.description,
+      category: data.category,
+      currency: data.currency,
 
       createdAt: now,
       lastUpdated: now,
@@ -124,18 +124,11 @@ export async function getDraftClaims(employeeId: number): Promise<{
 
     // Transform the claims to the format needed by the UI
     const formattedClaims = claims.map((claim) => {
-      // Parse the feedback which contains the metadata
-      let title = claim.getTitle()||"Expense Claim";
-      let date = "";
-      let category = claim.getCategory()||"";
-
-      // try {
-      //   const metadata = JSON.parse(claim.getFeedback());
-      //   date = metadata.date || "";
-      // } catch (e) {
-      //   // If feedback is not in JSON format, use it as the title
-      //   title = claim.getFeedback() || title;
-      // }
+      // Use direct column values instead of parsing from feedback
+      const title = claim.getTitle() || "Expense Claim";
+      const category = claim.getCategory() || "";
+      // For date, we'll use createdAt formatted as a string
+      const date = new Date(claim.getCreatedAt()).toLocaleDateString();
 
       // Format the lastUpdated date as an ISO string to ensure safe serialization
       let lastUpdatedStr = "";
@@ -247,20 +240,11 @@ export async function getPendingClaims(employeeId: number): Promise<{
 
     // Transform the claims to the format needed by the UI
     const formattedClaims = claims.map((claim) => {
-      // Parse the feedback which contains the metadata
-      let title = "Expense Claim";
-      let date = "";
-      let category = "";
-
-      try {
-        const metadata = JSON.parse(claim.getFeedback());
-        title = metadata.title || title;
-        date = metadata.date || "";
-        category = metadata.category || "";
-      } catch (e) {
-        // If feedback is not in JSON format, use it as the title
-        title = claim.getFeedback() || title;
-      }
+      // Use direct column values instead of parsing from feedback
+      const title = claim.getTitle() || "Expense Claim";
+      const category = claim.getCategory() || "";
+      // For date, we'll use createdAt formatted as a string
+      const date = new Date(claim.getCreatedAt()).toLocaleDateString();
 
       // Format the lastUpdated date as an ISO string to ensure safe serialization
       let lastUpdatedStr = "";
@@ -354,20 +338,11 @@ export async function getRecentClaims(employeeId: number): Promise<{
 
     // Transform the claims to the format needed by the UI
     const formattedClaims = recentClaims.map((claim) => {
-      // Parse the feedback which contains the metadata
-      let title = "Expense Claim";
-      let date = "";
-      let category = "";
-
-      try {
-        const metadata = JSON.parse(claim.getFeedback());
-        title = metadata.title || title;
-        date = metadata.date || "";
-        category = metadata.category || "";
-      } catch (e) {
-        // If feedback is not in JSON format, use it as the title
-        title = claim.getFeedback() || title;
-      }
+      // Use direct column values instead of parsing from feedback
+      const title = claim.getTitle() || "Expense Claim";
+      const category = claim.getCategory() || "";
+      // For date, we'll use createdAt formatted as a string
+      const date = new Date(claim.getCreatedAt()).toLocaleDateString();
 
       // Format the lastUpdated date as an ISO string to ensure safe serialization
       let lastUpdatedStr = "";
@@ -401,5 +376,99 @@ export async function getRecentClaims(employeeId: number): Promise<{
       error:
         error instanceof Error ? error.message : "An unexpected error occurred",
     };
+  }
+}
+
+/**
+ * Server action to get all submitted (pending) claims for a line manager to review
+ */
+export async function getSubmittedClaims(user: any): Promise<Array<Claim>> {
+  try {
+    if (!user || !user.getEmployeeRole) {
+      console.error("No authenticated user found or invalid user object");
+      return [];
+    }
+
+    const employeeRole = user.getEmployeeRole();
+    if (!employeeRole || employeeRole.getType() !== EmployeeType.LineManager) {
+      console.error(
+        "User is not a line manager or invalid line manager object"
+      );
+      return [];
+    }
+
+    // Use the correct method to get claims submitted by employees for this line manager
+    const pendingClaims = await employeeRole.getEmployeeSubmittedClaims();
+    return pendingClaims || [];
+  } catch (error) {
+    console.error("Error fetching submitted claims:", error);
+    return [];
+  }
+}
+
+/**
+ * Server action to approve a claim
+ */
+export async function approveClaimAction(claimId: number): Promise<boolean> {
+  try {
+    const db = DatabaseManager.getInstance();
+    const claim = await db.getClaim(claimId);
+
+    if (!claim) {
+      console.error("Claim not found");
+      return false;
+    }
+
+    // Update the claim status to ACCEPTED
+    const result = await db.updateClaimStatus(claimId, ClaimStatus.ACCEPTED);
+
+    if (!result) {
+      console.error("Failed to approve claim");
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error approving claim:", error);
+    return false;
+  }
+}
+
+/**
+ * Server action to reject a claim with feedback
+ */
+export async function rejectClaimAction(
+  claimId: number,
+  feedback: string
+): Promise<boolean> {
+  try {
+    if (!feedback || feedback.trim() === "") {
+      console.error("Feedback is required when rejecting a claim");
+      return false;
+    }
+
+    const db = DatabaseManager.getInstance();
+    const claim = await db.getClaim(claimId);
+
+    if (!claim) {
+      console.error("Claim not found");
+      return false;
+    }
+
+    // Set feedback
+    await db.updateClaimFeedback(claimId, feedback);
+
+    // Update the claim status to REJECTED
+    const result = await db.updateClaimStatus(claimId, ClaimStatus.REJECTED);
+
+    if (!result) {
+      console.error("Failed to reject claim");
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error rejecting claim:", error);
+    return false;
   }
 }

@@ -118,12 +118,12 @@ export default function DashboardLayout({
                   Management
                 </p>
                 <NavItem
-                  href="/dashboard/management/claims"
+                  href="/dashboard/manage"
                   icon={<FileText className="h-4 w-4" />}
                   label="Review Claims"
                 />
                 <NavItem
-                  href="/dashboard/management/employees"
+                  href="/dashboard/manage/employees"
                   icon={<Users className="h-4 w-4" />}
                   label="Employees"
                 />

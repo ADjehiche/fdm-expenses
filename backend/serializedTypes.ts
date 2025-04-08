@@ -1,4 +1,5 @@
 import { EmployeeType } from "./employee/employeeRole";
+import { ClaimStatus } from "./claims/claim";
 
 /**
  * Serializable version of the User class that can be safely passed to client components
@@ -16,6 +17,24 @@ export interface SerializedUser {
 }
 
 /**
+ * Serializable version of the Claim class that can be safely passed to client components
+ */
+export interface SerializedClaim {
+  id: string;
+  employeeId: number;
+  amount: number;
+  status: ClaimStatus;
+  title: string;
+  description: string;
+  category: string;
+  currency: string;
+  createdAt: string;
+  lastUpdated: string;
+  attemptCount: number;
+  feedback: string;
+}
+
+/**
  * Convert a backend User instance to a serializable plain object
  */
 export function serializeUser(user: any): SerializedUser {
@@ -25,7 +44,8 @@ export function serializeUser(user: any): SerializedUser {
     familyName: user.getFamilyName(),
     fullName: `${user.getFirstName()} ${user.getFamilyName()}`,
     email: user.getEmail(),
-    employeeClassification: user.getEmployeeClassification() === 0 ? "Internal" : "External",
+    employeeClassification:
+      user.getEmployeeClassification() === 0 ? "Internal" : "External",
     region: user.getRegion(),
     employeeRoleType: user.getEmployeeRole().getType(),
     createdAt: user.getCreatedAt().toISOString(),
