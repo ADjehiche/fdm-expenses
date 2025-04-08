@@ -1,6 +1,6 @@
-"use client"
-import React from 'react';
-import { SerializableUser } from './page';
+"use client";
+import React from "react";
+import { SerializableUser } from "./page";
 import {
   Table,
   TableBody,
@@ -36,7 +36,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ users }) => {
           </div>
         ) : (
           <Table>
-            <TableCaption>List of all employee accounts in the system</TableCaption>
+            <TableCaption>
+              List of all employee accounts in the system
+            </TableCaption>
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>
@@ -55,24 +57,22 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ users }) => {
                     {user.firstName} {user.familyName}
                   </TableCell>
                   <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    {user.employeeRole.employeeType}
-                  </TableCell>
+                  <TableCell>{user.employeeRole.employeeType}</TableCell>
                   <TableCell>{user.region}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2 ">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="h-8 w-8 p-0 bg-white" 
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0 bg-gray-50 border-none"
                         title="Edit user"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="h-8 w-8 p-0 text-red-500 hover:text-red-600 bg-white" 
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-red-500 hover:text-red-600 bg-gray-50 border-none"
                         title="Delete user"
                       >
                         <Trash2 className="h-4 w-4" />
