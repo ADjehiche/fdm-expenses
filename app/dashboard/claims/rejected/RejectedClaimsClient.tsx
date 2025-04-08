@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Edit, Trash2, Plus, Send } from "lucide-react";
+import { Edit, Send, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -44,20 +44,21 @@ function formatRelativeDate(dateString: string): string {
   }
 }
 
-interface DraftClaimsProps {
+interface RejectedClaimsProps {
   claims: Array<{
     id: number;
     title: string;
     date: string;
     amount: number;
+    feedback: string;
     category: string;
     lastUpdated: string;
   }>;
 }
 
-export default function DraftClaimsClient({
+export default function RejectedClaimsClient({
   claims: initialClaims,
-}: DraftClaimsProps) {
+}: RejectedClaimsProps) {
   const [claims, setClaims] = useState(initialClaims);
   const [submitting, setSubmitting] = useState<number | null>(null);
   const { toast } = useToast();
@@ -71,7 +72,6 @@ export default function DraftClaimsClient({
     }).format(amount);
   };
 
-  // Function to handle the submit action
   const handleSubmit = async (claimId: number) => {
     setSubmitting(claimId);
     try {
@@ -109,25 +109,18 @@ export default function DraftClaimsClient({
 
   return (
     <div className="space-y-6 text-black">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Draft Claims</h1>
-          <p className="text-muted-foreground">
-            Manage your expense claims in progress
-          </p>
-        </div>
-        <Button asChild className="bg-[#c3fa04] hover:bg-[#c3fa04]/90">
-          <Link href="/dashboard/claims/new">
-            <Plus className="mr-2 h-4 w-4" /> New Expense Claim
-          </Link>
-        </Button>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Rejected Claims</h1>
+        <p className="text-muted-foreground">
+          Your expense claims that have been rejected by your manager
+        </p>
       </div>
 
       <Card className="border-gray-200 border-solid border-2">
         <CardHeader className="pb-3">
-          <CardTitle>Draft Expense Claims</CardTitle>
+          <CardTitle>Rejected Expense Claims</CardTitle>
           <CardDescription>
-            These claims are saved but not yet submitted for approval
+            These claims have been rejected by your manager
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -139,6 +132,7 @@ export default function DraftClaimsClient({
                   <TableHead>Date</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Amount</TableHead>
+                  <TableHead>Feedback</TableHead>
                   <TableHead>Last Updated</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -150,6 +144,7 @@ export default function DraftClaimsClient({
                     <TableCell>{claim.date}</TableCell>
                     <TableCell>{claim.category}</TableCell>
                     <TableCell>{formatAmount(claim.amount)}</TableCell>
+                    <TableCell>{claim.feedback}</TableCell>
                     <TableCell>
                       {formatRelativeDate(claim.lastUpdated)}
                     </TableCell>
@@ -216,15 +211,10 @@ export default function DraftClaimsClient({
               <div className="rounded-full bg-muted p-3 mb-4">
                 <FileIcon className="h-6 w-6 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold mb-1">No draft claims</h3>
+              <h3 className="text-lg font-semibold mb-1">No rejected claims</h3>
               <p className="text-muted-foreground mb-4">
-                You haven't created any draft expense claims yet.
+                You don't have any expense claims that have been rejected
               </p>
-              <Button asChild className="bg-[#c3fa04] hover:bg-[#c3fa04]/90">
-                <Link href="/dashboard/claims/new" className="">
-                  <Plus className="mr-2 h-4 w-4" /> Create New Claim
-                </Link>
-              </Button>
             </div>
           )}
         </CardContent>
