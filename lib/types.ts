@@ -23,6 +23,31 @@ export type ExpenseStatus =
   | "rejected"
   | "paid";
 
+// Add ClaimStatus enum for client components to use
+export enum ClaimStatus {
+  DRAFT = "Draft",
+  PENDING = "Pending",
+  REJECTED = "Rejected",
+  ACCEPTED = "Accepted",
+  REIMBURSED = "Reimbursed",
+}
+
+// Add SerializedClaim interface for client components to use
+export interface SerializedClaim {
+  id: string;
+  employeeId: number;
+  amount: number;
+  status: ClaimStatus;
+  title: string;
+  description: string;
+  category: string;
+  currency: string;
+  createdAt: string;
+  lastUpdated: string;
+  attemptCount: number;
+  feedback: string;
+}
+
 export interface ExpenseClaim {
   id: string;
   userId: string;
