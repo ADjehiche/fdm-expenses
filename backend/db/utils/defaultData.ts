@@ -14,8 +14,6 @@ import {
   createReimbusedClaim,
   createRejectedClaim,
 } from "@/backend/db/utils/helpers";
-import { Claim, ClaimStatus } from "@/backend/claims/claim";
-import { User } from "@/backend/user";
 
 async function InsertDefaultData() {
   const db = DatabaseManager.getInstance();

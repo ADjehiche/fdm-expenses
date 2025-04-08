@@ -1,5 +1,5 @@
 import { eq, and, or, not } from "drizzle-orm";
-import { EmployeeClassification, User } from "../user";
+import { EmployeeClassification, matchUserName, User } from "../user";
 import { db } from "./drizzle";
 import { claimsTable, lineManagersTable, usersTable } from "./schema";
 import { GeneralStaff } from "../employee/generalStaff";
@@ -759,35 +759,25 @@ export class DatabaseManager {
         }
     }
 
+
+    async deleteDraftClaim(userId: number, claimId: number) : Promise<boolean> {
+        // check if exists
+        const claimRows = await this.getOwnClaimsByStatus(userId, ClaimStatus.DRAFT);
+
+        // check if draft
+
+        try {
+            await db.delete(claimsTable).where(eq(claimsTable.id, claimId))
+        } catch (error) {
+
+            return false;
+        }
+
+
+
+
+        return true;
+    }
+
 }
 
-
-/**
- * Rank returned:
- * 
- * Higher rank means two things:
- *  - early match
- *  - longer match
- * 
- * 
- * @param string string you match the expression against
- * @param expression string you want to know the match for
- * @returns match rank, higher means: larger match earlier on, longer match
- */
-const  getMatch =  (string: string, expression: string) : number => {
-    let rank = 1;
-
-    // TODO implement comparing algorithm
-
-    return rank;
-}
-
-const matchUserName =  (user: User, expression:string) : number => {
-    return  getMatch(user.getFirstName(), expression) *  getMatch(user.getFamilyName(), expression);
-
-} 
-
-const matchUserEmail =   (user: User, expression:string) : number => {
-    return  getMatch(user.getEmail(), expression);
-
-} 
