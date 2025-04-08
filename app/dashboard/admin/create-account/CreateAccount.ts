@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { Administrator } from "../../../../backend/employee/administrator";
 import { checkIfAdmin } from "../checkAdmin";
 import { DatabaseManager } from "../../../../backend/db/databaseManager";
+import { adminAPIHandler } from "@/actions/admin-api";
 
 // Define the state type for form submissions
 type CreateAccountState = {
@@ -16,32 +17,6 @@ export async function CreateAccountAdmin(
   formData: FormData
 ): Promise<CreateAccountState> {
   try {
-    // Get the current user from cookies
-    const cookie = await cookies();
-    const userId = cookie.get("user_id")?.value;
-
-    if (!userId) {
-      return { success: false, message: "User is not logged in" };
-    }
-
-    // Get user from database
-    const dbManager = DatabaseManager.getInstance();
-    const user = await dbManager.getAccount(parseInt(userId));
-
-    if (!user) {
-      return { success: false, message: "User not found" };
-    }
-
-    // Check if user is an admin
-    try {
-      checkIfAdmin(user);
-    } catch (error) {
-      return {
-        success: false,
-        message: "Unauthorized: Admin privileges required",
-      };
-    }
-
     // Get form data values
     const firstName = formData.get("firstName") as string;
     const familyName = formData.get("familyName") as string;
@@ -54,7 +29,15 @@ export async function CreateAccountAdmin(
     const employeeRole = formData.get("employeeRole") as string;
     const lineManagerId = formData.get("lineManagerId") as string;
 
-    const admin = user.getEmployeeRole() as Administrator;
+    const adminAPI = await adminAPIHandler();
+    if (!adminAPI) {
+      return { success: false, message: "Failed to retrieve admin API" };
+    }
+    else if (!(adminAPI instanceof Administrator)) {
+      return { success: false, message: "Invalid admin API" };
+    }
+
+    const admin = adminAPI;
 
     const result = await admin.createAccount({
       id: -1, // ID is auto-incremented by DB, so we can pass a dummy value

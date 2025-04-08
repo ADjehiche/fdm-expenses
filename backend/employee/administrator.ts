@@ -98,6 +98,15 @@ export class Administrator extends EmployeeRole {
         return db.setEmployeeRole(userId, newRole);
     }
 
+    async getAccount(employeeUserID: number): Promise<User[]> {
+        const db = DatabaseManager.getInstance();
+        const account = await db.getAccount(employeeUserID);
+        if (!account) {
+            throw new Error(`Account with ID ${employeeUserID} not found.`);
+        }
+        return [account];
+    }
+
     async getAccounts(): Promise<User[]> {
         const db = DatabaseManager.getInstance();
         return await db.getAllAccounts();

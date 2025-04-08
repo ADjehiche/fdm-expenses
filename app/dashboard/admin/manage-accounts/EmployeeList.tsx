@@ -1,26 +1,15 @@
-"use client"
 import React from 'react';
 import { SerializableUser } from './page';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Edit, Trash2 } from "lucide-react";
 import Link from 'next/link';
 
-// Define prop types for EmployeeList
 interface EmployeeListProps {
   users: SerializableUser[];
 }
 
-// Component to display a list of employees
 const EmployeeList: React.FC<EmployeeListProps> = ({ users }) => {
   return (
     <Card className="border-0 shadow-md w-full mt-6">
@@ -61,8 +50,13 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ users }) => {
                   </TableCell>
                   <TableCell>{user.region}</TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2 ">
-                      <Link href="/dashboard/admin/manage-accounts/edit-user">
+                    <div className="flex justify-end gap-2">
+                      <Link 
+                        href={{
+                          pathname: '/dashboard/admin/manage-accounts/edit-user',
+                          query: { userID: user.id } // Passing user as a query parameter
+                        }}
+                      >
                         <Button 
                           variant="outline" 
                           size="sm" 
@@ -72,10 +66,10 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ users }) => {
                           <Edit className="h-4 w-4" />
                         </Button>
                       </Link>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="h-8 w-8 p-0 text-red-500 hover:text-red-600 bg-white" 
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-red-500 hover:text-red-600 bg-white"
                         title="Delete user"
                       >
                         <Trash2 className="h-4 w-4" />
