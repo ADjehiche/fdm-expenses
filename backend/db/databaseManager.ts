@@ -1,5 +1,5 @@
 import { eq, and, or, not } from "drizzle-orm";
-import { EmployeeClassification, matchUserName, User } from "../user";
+import { EmployeeClassification, matchUserEmail, matchUserName, User } from "../user";
 import { db } from "./drizzle";
 import { claimsTable, lineManagersTable, usersTable } from "./schema";
 import { GeneralStaff } from "../employee/generalStaff";
@@ -142,13 +142,23 @@ export class DatabaseManager {
      * @param searchString search parameter names get compared against users first and family name
      * @returns An ordered array, lower index means User's name matches well with search parameter. 
      */
-    async getUserByName(searchString: string) : Promise<User[]> {
+    async getUsersByName(searchString: string) : Promise<User[]> {
         const users = await this.getAllAccounts()
 
         // sort by rank from name 
         users.sort((a, b) => {
-
             return matchUserName(a, searchString) - matchUserName(b, searchString);
+        })
+
+        return users;
+    }
+
+    async getUsersByEmail(searchString: string)  : Promise<User[]> {
+        const users = await this.getAllAccounts()
+
+        // sort by rank from name 
+        users.sort((a, b) => {
+            return matchUserEmail(a, searchString) - matchUserEmail(b, searchString);
         })
 
         return users;
