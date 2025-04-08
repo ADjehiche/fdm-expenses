@@ -11,24 +11,35 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { SerializedClaim, ClaimStatus } from "@/lib/types";
 import { toast } from "@/components/ui/use-toast";
+import { CheckCircle, XCircle, AlertCircle, Eye } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface PendingClaimsReviewProps {
   claims: SerializedClaim[];
   approveClaimAction: (id: string) => Promise<boolean>;
   rejectClaimAction: (id: string, feedback: string) => Promise<boolean>;
 }
+import Link from "next/link";
 
 export default function PendingClaimsReview({
   claims,
   approveClaimAction,
   rejectClaimAction,
 }: PendingClaimsReviewProps) {
-  const [feedbackMap, setFeedbackMap] = useState<Record<string, string>>({});
+  const [feedback, setFeedback] = useState<string>("");
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
+  const [selectedClaimId, setSelectedClaimId] = useState<string | null>(null);
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
 
   // Convert date string to formatted date
   const formatDate = (dateString: string) => {
@@ -64,8 +75,15 @@ export default function PendingClaimsReview({
     }
   };
 
-  const handleReject = async (claimId: string) => {
-    const feedback = feedbackMap[claimId];
+  const openRejectDialog = (claimId: string) => {
+    setSelectedClaimId(claimId);
+    setFeedback(""); // Reset feedback when opening dialog
+    setIsRejectDialogOpen(true);
+  };
+
+  const handleReject = async () => {
+    if (!selectedClaimId) return;
+
     if (!feedback || feedback.trim() === "") {
       toast({
         title: "Feedback Required",
@@ -75,9 +93,9 @@ export default function PendingClaimsReview({
       return;
     }
 
-    setIsLoading((prev) => ({ ...prev, [claimId]: true }));
+    setIsLoading((prev) => ({ ...prev, [selectedClaimId]: true }));
     try {
-      const result = await rejectClaimAction(claimId, feedback);
+      const result = await rejectClaimAction(selectedClaimId, feedback);
       if (result) {
         toast({
           title: "Claim Rejected",
@@ -99,17 +117,11 @@ export default function PendingClaimsReview({
         variant: "destructive",
       });
     } finally {
-      setIsLoading((prev) => ({ ...prev, [claimId]: false }));
+      setIsLoading((prev) => ({ ...prev, [selectedClaimId]: false }));
+      setIsRejectDialogOpen(false);
     }
   };
 
-  const handleFeedbackChange = (claimId: string, feedback: string) => {
-    setFeedbackMap((prev) => ({
-      ...prev,
-      [claimId]: feedback,
-    }));
-  };
-  console.log(claims);
   return (
     <Card className="w-full">
       <CardHeader>
@@ -127,14 +139,14 @@ export default function PendingClaimsReview({
                 <TableHead>Date</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {claims.map((claim) => (
                 <TableRow key={claim.id}>
                   <TableCell className="font-medium">{claim.title}</TableCell>
-                  <TableCell>{claim.employeeId}</TableCell>
+                  <TableCell>{claim.employeeName || "Unknown"}</TableCell>
                   <TableCell>{formatDate(claim.lastUpdated)}</TableCell>
                   <TableCell>${claim.amount.toFixed(2)}</TableCell>
                   <TableCell>
@@ -148,50 +160,84 @@ export default function PendingClaimsReview({
                       {claim.status}
                     </span>
                   </TableCell>
-                  <TableCell>
-                    <Tabs defaultValue="approve" className="w-full">
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="approve">Approve</TabsTrigger>
-                        <TabsTrigger value="reject">Reject</TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="approve" className="mt-2">
-                        <Button
-                          onClick={() => handleApprove(claim.id)}
-                          disabled={isLoading[claim.id]}
-                          className="w-full"
-                        >
-                          {isLoading[claim.id]
-                            ? "Processing..."
-                            : "Approve Claim"}
-                        </Button>
-                      </TabsContent>
-                      <TabsContent value="reject" className="space-y-2 mt-2">
-                        <Textarea
-                          placeholder="Provide feedback on why the claim is being rejected"
-                          value={feedbackMap[claim.id] || ""}
-                          onChange={(e) =>
-                            handleFeedbackChange(claim.id, e.target.value)
-                          }
-                          className="min-h-[80px] bg-white"
-                        />
-                        <Button
-                          onClick={() => handleReject(claim.id)}
-                          disabled={isLoading[claim.id]}
-                          variant="destructive"
-                          className="w-full"
-                        >
-                          {isLoading[claim.id]
-                            ? "Processing..."
-                            : "Reject Claim"}
-                        </Button>
-                      </TabsContent>
-                    </Tabs>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleApprove(claim.id)}
+                        disabled={isLoading[claim.id]}
+                        className="h-8 w-8 hover:bg-green-100 text-green-600 bg-gray-50 border-none cursor-pointer"
+                        title="Approve Claim"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => openRejectDialog(claim.id)}
+                        disabled={isLoading[claim.id]}
+                        className="h-8 w-8 bg-gray-50 hover:bg-red-100 text-red-600 border-none cursor-pointer"
+                        title="Reject Claim"
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 bg-gray-50 hover:bg-gray-100 text-gray-600 border-none cursor-pointer"
+                        title="Reject Claim"
+                      >
+                        <Link href={`/dashboard/claims/view/${claim.id}`}>
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         )}
+
+        {/* Rejection Dialog */}
+        <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
+          <DialogContent className="bg-gray-50">
+            <DialogHeader>
+              <DialogTitle>Reject Claim</DialogTitle>
+              <DialogDescription>
+                Please provide feedback explaining why this claim is being
+                rejected.
+              </DialogDescription>
+            </DialogHeader>
+            <Textarea
+              placeholder="Enter rejection feedback"
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              className="min-h-[100px] bg-gray-50"
+            />
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsRejectDialogOpen(false)}
+                disabled={isLoading[selectedClaimId || ""]}
+                className="bg-gray-200 hover:bg-gray-300 cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                className="bg-red-500 hover:bg-red-600 cursor-pointer"
+                onClick={handleReject}
+                disabled={isLoading[selectedClaimId || ""]}
+              >
+                {isLoading[selectedClaimId || ""]
+                  ? "Processing..."
+                  : "Reject Claim"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
