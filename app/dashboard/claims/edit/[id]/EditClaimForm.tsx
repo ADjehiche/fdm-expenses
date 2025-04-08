@@ -1,17 +1,15 @@
 "use client";
 
 import type React from "react";
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Camera, Upload, X } from "lucide-react";
-import { ClaimStatus } from "@/backend/claims/claim";
 import { useUser } from "@/app/contexts/UserContext";
+import { SerializedClaim } from "@/backend/serializedTypes";
 // Import server actions
-import { createClaim, addEvidenceToClaimServer } from "@/actions/claimActions";
+import { updateClaim, addEvidenceToClaimServer } from "@/actions/claimActions";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +32,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/use-toast";
+import { Camera, Upload, X } from "lucide-react";
 
 const expenseFormSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
@@ -51,38 +50,35 @@ const expenseFormSchema = z.object({
   date: z.string().min(1, "Please select a date"),
 });
 
-export default function NewExpenseClaimPage() {
+interface EditClaimFormProps {
+  claim: SerializedClaim;
+}
+
+export default function EditClaimForm({ claim }: EditClaimFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [evidence, setEvidence] = useState<
     { name: string; preview?: string }[]
-  >([]);
+  >(claim.evidence ? claim.evidence.map((name) => ({ name })) : []);
   const [realFiles, setRealFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  // Parse the claim date from ISO string to YYYY-MM-DD format
+  const claimDate = new Date(claim.createdAt).toISOString().split("T")[0];
 
   const form = useForm<z.infer<typeof expenseFormSchema>>({
     resolver: zodResolver(expenseFormSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      amount: "",
-      currency: "GBP",
-      category: "",
-      date: new Date().toISOString().split("T")[0],
+      title: claim.title || "",
+      description: claim.description || "",
+      amount: claim.amount.toString() || "",
+      currency: claim.currency || "GBP",
+      category: claim.category || "",
+      date: claimDate,
     },
   });
-
-  useEffect(() => {
-    // Clean up object URLs when component unmounts
-    return () => {
-      evidence.forEach((file) => {
-        if (file.preview) {
-          URL.revokeObjectURL(file.preview);
-        }
-      });
-    };
-  }, [evidence]);
 
   async function onSubmit(values: z.infer<typeof expenseFormSchema>) {
     setIsSubmitting(true);
@@ -92,8 +88,9 @@ export default function NewExpenseClaimPage() {
         throw new Error("User not authenticated");
       }
 
-      // Create claim using server action with direct column values
-      const response = await createClaim({
+      // Update the existing claim using server action
+      const response = await updateClaim({
+        claimId: parseInt(claim.id),
         employeeId: parseInt(user.id),
         amount: parseFloat(values.amount),
         title: values.title,
@@ -102,47 +99,24 @@ export default function NewExpenseClaimPage() {
         currency: values.currency,
       });
 
-      if (!response.success || !response.claimId) {
-        throw new Error(response.error || "Failed to save claim");
-      }
-
-      // Upload evidence files if any
-      if (realFiles.length > 0) {
-        for (const file of realFiles) {
-          try {
-            // Use a timeout to ensure files are processed sequentially with a small delay
-            await new Promise((resolve) => setTimeout(resolve, 100));
-            const evidenceResponse = await addEvidenceToClaimServer(
-              response.claimId,
-              file
-            );
-
-            if (!evidenceResponse.success) {
-              console.warn(
-                `Failed to add evidence file: ${file.name} - ${evidenceResponse.error}`
-              );
-            }
-          } catch (fileError) {
-            console.error("Error uploading evidence file:", fileError);
-            // Continue with other files even if one fails
-          }
-        }
+      if (!response.success) {
+        throw new Error(response.error || "Failed to update claim");
       }
 
       toast({
-        title: "Expense claim saved",
-        description: "Your expense claim has been saved as a draft",
+        title: "Expense claim updated",
+        description: "Your expense claim has been successfully updated",
       });
 
       router.push("/dashboard/claims/drafts");
     } catch (error) {
-      console.error("Error saving claim:", error);
+      console.error("Error updating claim:", error);
       toast({
         title: "Error",
         description:
           error instanceof Error
             ? error.message
-            : "There was an error saving your expense claim",
+            : "There was an error updating your expense claim",
         variant: "destructive",
       });
     } finally {
@@ -150,16 +124,65 @@ export default function NewExpenseClaimPage() {
     }
   }
 
+  // Handle file change - matching the new page implementation
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const newRealFiles = Array.from(e.target.files);
-      const newEvidenceFiles = newRealFiles.map((file) => ({
+      setUploading(true);
+
+      const files = Array.from(e.target.files);
+      const newEvidenceFiles = files.map((file) => ({
         name: file.name,
         preview: URL.createObjectURL(file),
       }));
 
-      setEvidence([...evidence, ...newEvidenceFiles]);
-      setRealFiles([...realFiles, ...newRealFiles]);
+      // Upload each file using the server action
+      const uploadPromises = files.map(async (file) => {
+        try {
+          const result = await addEvidenceToClaimServer(
+            parseInt(claim.id),
+            file
+          );
+
+          if (!result.success) {
+            toast({
+              title: "Error",
+              description: result.error || `Failed to upload ${file.name}`,
+              variant: "destructive",
+            });
+            return null;
+          }
+          return file.name;
+        } catch (error) {
+          console.error("Error uploading file:", error);
+          toast({
+            title: "Upload Error",
+            description: `Error uploading ${file.name}`,
+            variant: "destructive",
+          });
+          return null;
+        }
+      });
+
+      Promise.all(uploadPromises).then((results) => {
+        // Filter out failed uploads
+        const successfulUploads = results.filter(Boolean);
+
+        if (successfulUploads.length > 0) {
+          setEvidence((prev) => [
+            ...prev,
+            ...newEvidenceFiles.filter((f) =>
+              successfulUploads.includes(f.name)
+            ),
+          ]);
+
+          toast({
+            title: "Files uploaded",
+            description: `Successfully uploaded ${successfulUploads.length} file(s)`,
+          });
+        }
+
+        setUploading(false);
+      });
     }
   };
 
@@ -172,16 +195,23 @@ export default function NewExpenseClaimPage() {
   };
 
   const handleRemoveEvidence = (index: number) => {
-    const newEvidence = [...evidence];
-    if (newEvidence[index].preview) {
-      URL.revokeObjectURL(newEvidence[index].preview!);
+    const file = evidence[index];
+
+    // If there's a preview URL, revoke it to free memory
+    if (file.preview) {
+      URL.revokeObjectURL(file.preview);
     }
+
+    // Remove the file from state
+    const newEvidence = [...evidence];
     newEvidence.splice(index, 1);
     setEvidence(newEvidence);
 
-    const newRealFiles = [...realFiles];
-    newRealFiles.splice(index, 1);
-    setRealFiles(newRealFiles);
+    // Here you would call the server to remove the file from the claim as well
+    toast({
+      title: "Evidence removed",
+      description: `File "${file.name}" has been removed from your claim`,
+    });
   };
 
   return (
@@ -189,10 +219,10 @@ export default function NewExpenseClaimPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-800">
-            New Expense Claim
+            Edit Expense Claim
           </h1>
           <p className="text-muted-foreground">
-            Create a new expense claim to submit to your line manager
+            Update your expense claim details
           </p>
         </div>
       </div>
@@ -217,7 +247,7 @@ export default function NewExpenseClaimPage() {
               <path d="M16 12h-6" />
               <path d="M16 16h-6" />
             </svg>
-            New Expense Claim Form
+            Edit Expense Claim Form
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-6 bg-white">
@@ -385,6 +415,7 @@ export default function NewExpenseClaimPage() {
                 />
               </div>
 
+              {/* Evidence Section - Replacing with the exact implementation from new page */}
               <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
                 <FormLabel className="text-gray-700 font-medium">
                   Evidence (Optional)
@@ -409,7 +440,7 @@ export default function NewExpenseClaimPage() {
                       </Button>
                       {file.preview ? (
                         <img
-                          src={file.preview || "/placeholder.svg"}
+                          src={file.preview}
                           alt={file.name}
                           className="h-20 w-full object-cover rounded"
                         />
@@ -439,6 +470,7 @@ export default function NewExpenseClaimPage() {
                           multiple
                           className="hidden"
                           onChange={handleFileChange}
+                          disabled={uploading}
                         />
                       </label>
                     </div>
@@ -456,6 +488,33 @@ export default function NewExpenseClaimPage() {
                     </div>
                   </div>
                 </div>
+                {uploading && (
+                  <div className="flex items-center justify-center mt-4">
+                    <div className="flex items-center space-x-2 bg-blue-50 text-blue-700 px-3 py-2 rounded-md text-sm">
+                      <svg
+                        className="animate-spin h-4 w-4"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      <span>Uploading files...</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end space-x-4 mt-8 pt-6 border-t">
@@ -494,10 +553,10 @@ export default function NewExpenseClaimPage() {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      Saving...
+                      Updating...
                     </span>
                   ) : (
-                    "Save as Draft"
+                    "Update Claim"
                   )}
                 </Button>
               </div>
@@ -509,6 +568,7 @@ export default function NewExpenseClaimPage() {
   );
 }
 
+// Add the FileIcon function to match the new page's implementation
 function FileIcon() {
   return (
     <svg

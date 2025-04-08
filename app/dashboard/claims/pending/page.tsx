@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/actions/loginauth";
+import { getPendingClaims } from "@/actions/claimActions";
 import { DatabaseManager } from "@/backend/db/databaseManager";
 import { ClaimStatus } from "@/backend/claims/claim";
-import { getAcceptedClaims } from "@/actions/claimActions";
-import ApprovedClaimsClient from "./ApprovedClaimsClient";
+import PendingClaimsClient from "./PendingClaimsClient";
 
-export default async function AcceptedClaimsPage() {
+export default async function PendingClaimsPage() {
+  // Get current user
   const user = await getCurrentUser();
 
   if (!user || !user.id) {
@@ -14,9 +15,8 @@ export default async function AcceptedClaimsPage() {
   }
 
   // Fetch real draft claims from database
-  const response = await getAcceptedClaims(parseInt(user.id));
-  const acceptedClaims = response.success ? response.claims || [] : [];
+  const response = await getPendingClaims(parseInt(user.id));
+  const pendingClaims = response.success ? response.claims || [] : [];
 
-  // Pass the data to the client component
-  return <ApprovedClaimsClient claims={acceptedClaims} />;
+  return <PendingClaimsClient claims={pendingClaims} />;
 }

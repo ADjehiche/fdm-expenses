@@ -1,3 +1,4 @@
+import { desc } from "drizzle-orm";
 import { Claim, ClaimStatus } from "../claims/claim";
 import { DatabaseManager } from "../db/databaseManager";
 import { User } from "../user";
@@ -31,20 +32,77 @@ export abstract class EmployeeRole {
         this.lineManager = lineManager;
     }
 
-    async createDraftClaim(): Promise<Claim | null> {
+    async createDraftClaim({
+        title,
+        description,
+        category,
+        currency,
+        amount,
+        accountName,
+        accountNumber,
+        sortCode,
+    }: {
+        title: string
+        description: string
+        category: string
+        currency: string
+        amount?: number,
+        accountName?: string,
+        accountNumber?: string,
+        sortCode?: string,
+    }): Promise<Claim | null> {
         const db = DatabaseManager.getInstance();
         const claim = new Claim({
             id: 0,
             employeeId: this.userId,
+
             status: ClaimStatus.DRAFT,
             attemptCount: 0,
-            createdAt: new Date(),
-            amount: 0,
-            lastUpdated: new Date(),
+            
+            amount: amount ?? 0,
             evidence: [],
-            feedback: ""
+            feedback: "",
+
+            accountName: accountName ?? null,
+            accountNumber: accountNumber ?? null,
+            sortCode: sortCode ?? null,
+
+            title:title,
+            description:description,
+            currency:currency,
+            category:category,
+
+            createdAt: new Date(),
+            lastUpdated: new Date(),
         });
         return await db.addClaim(claim);
+    }
+
+    async updateClaimBankAccountDetails(claim: Claim, updateClaimBankAccountDetails: {
+        accountName: string | undefined,
+        accountNumber: string | undefined,
+        sortCode: string | undefined
+    }): Promise<Claim | null> {
+        const db = DatabaseManager.getInstance();
+        if (claim.getStatus() == ClaimStatus.REIMBURSED) {
+            console.error("Claim is already reimbursed", claim.getId());
+            return null;
+        }
+        if (claim.getEmployeeId() !== this.userId) {
+            console.error("Claim does not belong to this employee", claim.getId(), claim.getEmployeeId(), this.userId);
+            return null;
+        }
+        const updateClaim = await db.updateClaimBankDetails(claim.getId(), updateClaimBankAccountDetails);
+        if (!updateClaim) {
+            console.error("Failed to update claim bank account details", claim.getId());
+            return null;
+        }
+
+        if (updateClaimBankAccountDetails.accountName) claim.setAccountName(updateClaimBankAccountDetails.accountName);
+        if (updateClaimBankAccountDetails.accountNumber) claim.setAccountNumber(updateClaimBankAccountDetails.accountNumber);
+        if (updateClaimBankAccountDetails.sortCode) claim.setSortCode(updateClaimBankAccountDetails.sortCode);
+        claim.setLastUpdated(new Date());
+        return claim;
     }
 
     async submitClaim(claim: Claim): Promise<Claim | null> {
@@ -69,6 +127,7 @@ export abstract class EmployeeRole {
 
         claim.setStatus(ClaimStatus.PENDING);
         claim.setAttemptCount(claim.getAttemptCount() + 1);
+        claim.setLastUpdated(new Date());
         return claim;
     }
 
@@ -94,6 +153,7 @@ export abstract class EmployeeRole {
 
         claim.setStatus(ClaimStatus.PENDING);
         claim.setAttemptCount(claim.getAttemptCount() + 1);
+        claim.setLastUpdated(new Date());
         return claim;
     }
 
@@ -113,6 +173,7 @@ export abstract class EmployeeRole {
             return null;
         }
         claim.setAmount(amount);
+        claim.setLastUpdated(new Date());
         return claim;
     }
 

@@ -42,7 +42,7 @@ export default function DashboardLayout({
           <div className="flex items-center space-x-2">
             <a
               id="site-logo"
-              href="."
+              href="/dashboard"
               title="fdm logo"
               className="items-center px-5 flex-none"
             >
@@ -112,31 +112,31 @@ export default function DashboardLayout({
               label="Rejected Claims"
             />
 
-            {userRole === "lineManager" && (
+            {userRole === "Line Manager" && (
               <>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2 px-3">
                   Management
                 </p>
                 <NavItem
-                  href="/dashboard/management/claims"
+                  href="/dashboard/manage"
                   icon={<FileText className="h-4 w-4" />}
                   label="Review Claims"
                 />
                 <NavItem
-                  href="/dashboard/management/employees"
+                  href="/dashboard/manage/employees"
                   icon={<Users className="h-4 w-4" />}
                   label="Employees"
                 />
               </>
             )}
 
-            {userRole === "payrollOfficer" && (
+            {userRole === "Payroll Officer" && (
               <>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2 px-3">
                   Payroll
                 </p>
                 <NavItem
-                  href="/dashboard/payroll/claims"
+                  href="/dashboard/reimburse"
                   icon={<CreditCard className="h-4 w-4" />}
                   label="Process Payments"
                 />
