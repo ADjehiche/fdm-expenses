@@ -155,7 +155,7 @@ export default function ClaimViewClient({
     day: "numeric",
   });
 
-  // Handle claim approval
+  //  claim approval
   const handleApprove = async () => {
     setIsSubmitting(true);
     try {
@@ -460,7 +460,7 @@ export default function ClaimViewClient({
                             claim.status === ClaimStatus.REJECTED) && (
                             <Button
                               variant="destructive"
-                              className="bg-red-500 hover:bg-red-600"
+                              className="text-red-500 cursor-pointer"
                               onClick={() => handleDeleteFile(file.name)}
                               disabled={deletingFile === file.name}
                             >
