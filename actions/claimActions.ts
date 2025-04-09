@@ -408,6 +408,31 @@ export async function submitDraftClaim(claimId: number): Promise<{
   }
 }
 
+
+/**
+ * Server action to update a claim's status from Draft to Pending
+ */
+export async function deleteDraftClaim(userId: number, claimId: number): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const db = DatabaseManager.getInstance();
+
+    // Delete claim
+    await db.deleteDraftClaim(userId, claimId);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting claim:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
+
 /**
  * Server action to get all pending claims for a specific employee
  */
