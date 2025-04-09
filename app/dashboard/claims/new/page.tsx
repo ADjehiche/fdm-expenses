@@ -2,12 +2,12 @@
 
 import type React from "react";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Camera, Upload, X } from "lucide-react";
+import { Camera, Upload, X, Eye } from "lucide-react";
 import { ClaimStatus } from "@/backend/claims/claim";
 import { useUser } from "@/app/contexts/UserContext";
 // Import server actions
@@ -57,9 +57,12 @@ export default function NewExpenseClaimPage() {
   const { user } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [evidence, setEvidence] = useState<
-    { name: string; preview?: string }[]
+    { name: string; preview?: string; url?: string }[]
   >([]);
   const [realFiles, setRealFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof expenseFormSchema>>({
     resolver: zodResolver(expenseFormSchema),
@@ -106,9 +109,13 @@ export default function NewExpenseClaimPage() {
         throw new Error(response.error || "Failed to save claim");
       }
 
-      // Upload evidence files if any
-      if (realFiles.length > 0) {
-        for (const file of realFiles) {
+      // Only upload evidence files that aren't already uploaded
+      const filesToUpload = realFiles.filter(
+        (file) => !evidence.some((e) => e.url && e.name === file.name)
+      );
+
+      if (filesToUpload.length > 0) {
+        for (const file of filesToUpload) {
           try {
             // Use a timeout to ensure files are processed sequentially with a small delay
             await new Promise((resolve) => setTimeout(resolve, 100));
@@ -150,16 +157,69 @@ export default function NewExpenseClaimPage() {
     }
   }
 
+  // Handle evidence file upload (single file upload with immediate processing)
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingFile(true);
+
+    try {
+      // This is a direct upload without claim ID
+      // We'll store the file in state and upload it when the claim is created
+      const file = files[0];
+      const filePreview = URL.createObjectURL(file);
+
+      setEvidence((prev) => [
+        ...prev,
+        {
+          name: file.name,
+          preview: filePreview,
+        },
+      ]);
+      setRealFiles((prev) => [...prev, file]);
+
+      toast({
+        title: "File added",
+        description: "Evidence file has been added to your draft claim",
+      });
+    } catch (error) {
+      console.error("Error processing file:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while processing the file",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""; // Reset input
+      }
+    }
+  };
+
+  // Modified to match EditClaimForm's file handling
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const newRealFiles = Array.from(e.target.files);
-      const newEvidenceFiles = newRealFiles.map((file) => ({
+      setUploading(true);
+
+      const newFiles = Array.from(e.target.files);
+      const newEvidenceFiles = newFiles.map((file) => ({
         name: file.name,
         preview: URL.createObjectURL(file),
       }));
 
       setEvidence([...evidence, ...newEvidenceFiles]);
-      setRealFiles([...realFiles, ...newRealFiles]);
+      setRealFiles([...realFiles, ...newFiles]);
+
+      setUploading(false);
+
+      toast({
+        title: "Files added",
+        description: `${newFiles.length} file(s) added to your draft claim`,
+      });
     }
   };
 
@@ -174,10 +234,11 @@ export default function NewExpenseClaimPage() {
   const handleRemoveEvidence = (index: number) => {
     // Create a copy of the evidence array
     const newEvidence = [...evidence];
+    const fileToRemove = newEvidence[index];
 
     // If the file has a preview URL, revoke it to prevent memory leaks
-    if (newEvidence[index].preview) {
-      URL.revokeObjectURL(newEvidence[index].preview!);
+    if (fileToRemove.preview) {
+      URL.revokeObjectURL(fileToRemove.preview);
     }
 
     // Remove the file from the evidence array
@@ -191,9 +252,7 @@ export default function NewExpenseClaimPage() {
 
     toast({
       title: "Evidence removed",
-      description: `File "${
-        newEvidence[index]?.name || "File"
-      }" has been removed from your draft claim`,
+      description: `File "${fileToRemove.name}" has been removed from your draft claim`,
     });
   };
 
@@ -434,6 +493,32 @@ export default function NewExpenseClaimPage() {
                       <p className="text-xs mt-1 truncate font-medium">
                         {file.name}
                       </p>
+                      {file.url && (
+                        <div className="mt-2 flex justify-center">
+                          <a
+                            href={file.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-blue-600 hover:text-blue-800 text-xs"
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            View
+                          </a>
+                        </div>
+                      )}
+                      {file.preview && !file.url && (
+                        <div className="mt-2 flex justify-center">
+                          <a
+                            href={file.preview}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-blue-600 hover:text-blue-800 text-xs"
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            Preview
+                          </a>
+                        </div>
+                      )}
                     </div>
                   ))}
                   <div className="flex gap-2">
@@ -452,6 +537,7 @@ export default function NewExpenseClaimPage() {
                           multiple
                           className="hidden"
                           onChange={handleFileChange}
+                          ref={fileInputRef}
                         />
                       </label>
                     </div>
@@ -534,7 +620,7 @@ function FileIcon() {
       strokeLinejoin="round"
       className="h-8 w-8 text-muted-foreground"
     >
-      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0-2-2V4a2 2 0 0 0 2-2h8.5z" />
       <polyline points="14 2 14 8 20 8" />
     </svg>
   );

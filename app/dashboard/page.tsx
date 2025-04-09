@@ -179,15 +179,6 @@ export default function dashboardPage() {
                   </p>
                 </div>
               )}
-              <Button
-                variant="outline"
-                className="w-full mt-4 bg-[#c3fa04]"
-                asChild
-              >
-                <Link href="/dashboard/claims">
-                  View all claims <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
             </CardContent>
           </Card>
         </TabsContent>
