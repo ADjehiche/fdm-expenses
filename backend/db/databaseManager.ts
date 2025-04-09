@@ -7,18 +7,16 @@ import {
 } from "../user";
 import { db } from "./drizzle";
 import { claimsTable, lineManagersTable, usersTable } from "./schema";
-import { GeneralStaff } from "../employee/generalStaff";
 import { Claim, ClaimStatus } from "../claims/claim";
-import { EmployeeRole, EmployeeType } from "../employee/employeeRole";
-import { LineManager } from "../employee/lineManager";
-import { Administrator } from "../employee/administrator";
-import { PayrollOfficer } from "../employee/payrollOfficer";
-import { Consultant } from "../employee/consultant";
+import { EmployeeType } from "../employee/utils";
 import bcrypt from "bcryptjs";
 // We use a server-only check to handle fs operations
 const isServer = typeof window === "undefined";
 // Import fs conditionally - only on server side
 const fs = isServer ? require("fs") : null;
+
+// Forward declaration of the EmployeeRole interface
+import type { EmployeeRole } from "../employee/employeeRole";
 
 // Forward declaration of the EmployeeRole interface
 import type { EmployeeRole } from "../employee/employeeRole";

@@ -22,6 +22,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/components/use-toast";
+// Import ClaimStatus
+import { ClaimStatus } from "@/backend/claims/claim";
 
 // Helper function for safe date formatting
 function formatRelativeDate(dateString: string): string {

@@ -1,13 +1,10 @@
-import React from 'react';
-import { DatabaseManager } from '../../../../backend/db/databaseManager';
-import { User, EmployeeClassification } from '../../../../backend/user';
-import { EmployeeType } from '../../../../backend/employee/employeeRole';
-import EmployeeList from './EmployeeList';
-import { Button } from '@/components/ui/button';
-import { UserPlus } from 'lucide-react';
-import Link from 'next/link';
+import React from "react";
+import { fetchAllUsers } from "./fetchusers";
+import { Button } from "@/components/ui/button";
+import { UserPlus } from "lucide-react";
+import Link from "next/link";
+import EmployeeList from "./EmployeeList";
 
-// Define a serializable user type for client components
 export type SerializableUser = {
   id: number;
   createdAt: string;
@@ -21,31 +18,6 @@ export type SerializableUser = {
   };
 };
 
-// Fetch users server-side for the page and serialize them
-export async function fetchAllUsers(): Promise<SerializableUser[]> {
-  const db = DatabaseManager.getInstance();
-  try {
-    const users = await db.getAllAccounts();
-    // Serialize User objects to plain objects that can be passed to client components
-    return users.map(user => ({
-      id: user.getId(),
-      createdAt: user.getCreatedAt().toISOString(),
-      firstName: user.getFirstName(),
-      familyName: user.getFamilyName(),
-      email: user.getEmail(),
-      employeeClassification: EmployeeClassification[user.getEmployeeClassification()],
-      region: user.getRegion(),
-      employeeRole: {
-        employeeType: user.getEmployeeRole().getType()
-      }
-    }));
-  } catch (error) {
-    console.error("Failed to fetch users:", error);
-    return [];
-  }
-}
-
-// Page Component that fetches users and passes them to EmployeeList
 const ManageAccountsPage = async () => {
   const users = await fetchAllUsers();
 
@@ -60,11 +32,12 @@ const ManageAccountsPage = async () => {
           </Button>
         </Link>
       </div>
-      
+
       <p className="text-muted-foreground">
-        View and manage all employee accounts in the system. Use the actions to edit or delete accounts as needed.
+        View and manage all employee accounts in the system. Use the actions to
+        edit or delete accounts as needed.
       </p>
-      
+
       <EmployeeList users={users} />
     </div>
   );

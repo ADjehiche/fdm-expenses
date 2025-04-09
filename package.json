@@ -10,7 +10,12 @@
     "db": "npx drizzle-kit push  && npx tsx backend/db/utils/defaultData.ts && npx tsx backend/db/utils/superAdminAccount.ts",
     "show-db": "npx drizzle-kit studio",
     "create-super-user": "npx tsx backend/db/utils/superAdminAccount.ts",
-    "db-reset": "rimraf local.db && npx drizzle-kit push && npx tsx backend/db/utils/defaultData.ts && npx tsx backend/db/utils/superAdminAccount.ts"
+    "db-reset": "rimraf local.db && npx drizzle-kit push && npx tsx backend/db/utils/defaultData.ts && npx tsx backend/db/utils/superAdminAccount.ts",
+    "dev:full": "npm run db && npm run dev",
+    "typecheck": "tsc --noEmit",
+    "analyze": "ANALYZE=true next build",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
@@ -37,6 +42,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@next/bundle-analyzer": "^15.2.5",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

@@ -2,7 +2,7 @@
 
 import { DatabaseManager } from "@/backend/db/databaseManager";
 import { Claim, ClaimStatus } from "@/backend/claims/claim";
-import { EmployeeType } from "@/backend/employee/employeeRole";
+import { EmployeeType } from "@/backend/employee/utils";
 import { get } from "http";
 
 /**

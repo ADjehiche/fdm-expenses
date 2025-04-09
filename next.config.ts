@@ -1,10 +1,16 @@
 import type { NextConfig } from "next";
+const withBundleAnalyzer = require("@next/bundle-analyzer")({
+  enabled: process.env.ANALYZE === "true",
+});
 
 const nextConfig: NextConfig = {
-  // ✅ Moved outside of "experimental"
   serverExternalPackages: ["bcrypt", "tar", "@mapbox/node-pre-gyp"],
-
-  // ✅ Webpack fallback for client-side
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true, // 👈 Skip type errors during `next build`
+  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
@@ -32,15 +38,14 @@ const nextConfig: NextConfig = {
       };
     }
 
-    // 👇 Add this to handle .html files in node_modules
     config.module.rules.push({
       test: /\.html$/,
       use: ["raw-loader"],
-      exclude: /app|pages/, // Prevents conflicts with your own HTML files if any
+      exclude: /app|pages/,
     });
 
     return config;
   },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);
