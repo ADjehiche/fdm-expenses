@@ -172,16 +172,29 @@ export default function NewExpenseClaimPage() {
   };
 
   const handleRemoveEvidence = (index: number) => {
+    // Create a copy of the evidence array
     const newEvidence = [...evidence];
+
+    // If the file has a preview URL, revoke it to prevent memory leaks
     if (newEvidence[index].preview) {
       URL.revokeObjectURL(newEvidence[index].preview!);
     }
+
+    // Remove the file from the evidence array
     newEvidence.splice(index, 1);
     setEvidence(newEvidence);
 
+    // Also remove the file from the realFiles array to ensure it doesn't get uploaded
     const newRealFiles = [...realFiles];
     newRealFiles.splice(index, 1);
     setRealFiles(newRealFiles);
+
+    toast({
+      title: "Evidence removed",
+      description: `File "${
+        newEvidence[index]?.name || "File"
+      }" has been removed from your draft claim`,
+    });
   };
 
   return (
