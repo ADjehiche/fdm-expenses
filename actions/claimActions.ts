@@ -408,6 +408,23 @@ export async function submitDraftClaim(claimId: number): Promise<{
   }
 }
 
+
+/**
+ * Server action to update a claim's status from Draft to Pending
+ */
+export async function deleteDraftClaim(userId: number, claimId: number): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  const db = DatabaseManager.getInstance();
+
+  const response = await db.deleteDraftClaim(userId, claimId);
+  return {
+    success: response.success,
+    error: response.success ? undefined : response.message,
+  }
+}
+
 /**
  * Server action to get all pending claims for a specific employee
  */

@@ -5,9 +5,8 @@
 - [ ] line manager - approve / reject
 - [ ] payroll officer - reimburse
 - [ ] admin - add accounts
-- [ ] change password
-- [ ] view approved forms
-- [ ] view approved forms
+- [ ] edit account
+- [ ] edit claims
 
 # Employee
 - create draft form

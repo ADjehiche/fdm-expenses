@@ -104,7 +104,7 @@ export default function LoginPage() {
               <h1 className="text-xl font-bold text-gray-900">Welcome Back</h1>
               <p className="text-gray-600 text-sm mt-1">
                 Login to{" "}
-                <span className="font-semibold text-[#c3fa04]">
+                <span className="font-semibold text-lime-500">
                   FDMExpenses
                 </span>
               </p>
@@ -170,7 +170,7 @@ export default function LoginPage() {
                           </FormLabel>
                           <Link
                             href="/forgot-password"
-                            className="text-xs text-[#c3fa04] hover:underline"
+                            className="text-xs text-lime-600 hover:underline"
                           >
                             Forgot password?
                           </Link>

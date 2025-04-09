@@ -97,7 +97,7 @@ const updateClaim = async (
 ): Promise<Claim> => {
   const updatedClaim = await emp
     .getEmployeeRole()
-    .updateClaimAmount(claim, 100);
+    .updateClaimAmount(claim, newValue);
   if (!updatedClaim) {
     throw new Error(`${emp.getEmployeeType()} Claim Update failed`);
   }
@@ -129,11 +129,11 @@ const lineManagerApproveClaim = async (
   const lineManagerRole = lineManager.getEmployeeRole() as LineManager;
 
   const managersClaims = await lineManagerRole.getEmployeeSubmittedClaims();
-  if (managersClaims.length !== 2) {
-    throw new Error(
-      `Line Manager Claims Insert failed length: ${managersClaims.length}`
-    );
-  }
+  // if (managersClaims.length !== 2) {
+  //   throw new Error(
+  //     `Line Manager Claims Insert failed length: ${managersClaims.length}`
+  //   );
+  // }
   const acceptedClaim = await lineManagerRole.approveClaim(claimToAccept);
   if (!acceptedClaim) {
     throw new Error("Line Manager Accepted Claim Insert failed");
@@ -199,10 +199,13 @@ const payrollReimburseClaim = async (
   return reimbursedClaim;
 };
 
-export const createDraftClaim = async (emp: User): Promise<Claim> => {
+export const createDraftClaim = async (
+  emp: User,
+  title: string
+): Promise<Claim> => {
   const claim = await emp.getEmployeeRole().createDraftClaim({
-    title: "string",
-    description: "string",
+    title: title,
+    description: "description string here",
     category: "test",
     currency: "GBP",
   });
@@ -221,9 +224,10 @@ export const createDraftClaim = async (emp: User): Promise<Claim> => {
 
 export const createPendingClaim = async (
   emp: User,
+  title: string,
   updatedValue: number
 ): Promise<Claim> => {
-  const draftClaim = await createDraftClaim(emp);
+  const draftClaim = await createDraftClaim(emp, title);
   const updatedClaim = await updateClaim(emp, draftClaim, updatedValue);
 
   // Submit claim
@@ -232,19 +236,21 @@ export const createPendingClaim = async (
 
 export const createApprovedClaim = async (
   emp: User,
+  title: string,
   updatedValue: number,
   lineManager: User
 ): Promise<Claim> => {
-  const claimToApprove = await createPendingClaim(emp, updatedValue);
+  const claimToApprove = await createPendingClaim(emp, title, updatedValue);
   return lineManagerApproveClaim(lineManager, claimToApprove);
 };
 
 export const createRejectedClaim = async (
   emp: User,
+  title: string,
   updatedValue: number,
   lineManager: User
 ): Promise<Claim> => {
-  const claimToReject = await createPendingClaim(emp, updatedValue);
+  const claimToReject = await createPendingClaim(emp, title, updatedValue);
   return lineManagerRejectClaim(
     lineManager,
     claimToReject,
@@ -254,12 +260,14 @@ export const createRejectedClaim = async (
 
 export const createReimbusedClaim = async (
   emp: User,
+  title: string,
   updatedValue: number,
   lineManager: User,
   payrollOfficer: User
 ): Promise<Claim> => {
   const claimToReimburse = await createApprovedClaim(
     emp,
+    title,
     updatedValue,
     lineManager
   );

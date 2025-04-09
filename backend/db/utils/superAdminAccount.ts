@@ -1,8 +1,9 @@
 import { DatabaseManager } from "../databaseManager";
+import { defaultPassword } from "./consts";
 
 async function AddOrGetAdministrator() {
     const SUPER_ADMIN_EMAIL = "superAdmin@test.com";
-    const SUPER_ADMIN_PASSWORD = "pass123";
+    const SUPER_ADMIN_PASSWORD = defaultPassword;
 
     const dbManager = DatabaseManager.getInstance();
 
@@ -28,7 +29,7 @@ async function AddOrGetAdministrator() {
     }
     console.log("Administrator Login test successful");
 
-    console.log(`Created new admin account - user id: ${administrator.getId()} login email: ${administrator.getEmail()} password: ${"pass123"}`);
+    console.log(`Created new admin account - user id: ${administrator.getId()} login email: ${administrator.getEmail()} password: ${defaultPassword}`);
 }
 
 AddOrGetAdministrator();

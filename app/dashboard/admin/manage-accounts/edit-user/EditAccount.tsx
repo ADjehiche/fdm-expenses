@@ -78,8 +78,10 @@ export async function updateUser(
       .where(eq(usersTable.id, userIdNum));
 
     // Update email and region using the existing methods
-    await admin.changeEmployeesEmail(userIdNum, email);
-    await admin.changeEmployeesRegion(userIdNum, region);
+    const changeEmailResult = await admin.changeEmployeesEmail(userIdNum, email);
+    if (!changeEmailResult.success) return { success: false, message: changeEmailResult.message || "Failed to update email" };
+    const changeRegionResult = await admin.changeEmployeesRegion(userIdNum, region);
+    if (!changeRegionResult.success) return { success: false, message: changeRegionResult.message || "Failed to update region" };
 
     // Parse the classification
     const newClassification =
@@ -89,7 +91,8 @@ export async function updateUser(
 
     // Update classification if changed
     if (user.getEmployeeClassification() !== newClassification) {
-      await admin.changeEmployeesClassification(userIdNum, newClassification);
+      const result = await admin.changeEmployeesClassification(userIdNum, newClassification);
+      if (!result.success) return { success: false, message: result.message || "Failed to update employee classification" };
     }
 
     // Parse the role
@@ -116,7 +119,8 @@ export async function updateUser(
 
     // Update role if changed
     if (user.getEmployeeType() !== newRole) {
-      await admin.changeRole(userIdNum, newRole);
+      const result = await admin.changeRole(userIdNum, newRole);
+      if (!result.success) return { success: false, message: result.message || "Failed to update employee role" };
     }
 
     // Update line manager if provided and changed
@@ -125,7 +129,8 @@ export async function updateUser(
       // Check if line manager exists
       const lineManager = await db.getAccount(lineManagerIdNum);
       if (lineManager) {
-        await admin.setEmployeesLineManager(userIdNum, lineManagerIdNum);
+        const result = await admin.setEmployeesLineManager(userIdNum, lineManagerIdNum);
+        if (!result.success) return { success: false, message: result.message || "Failed to set employee's line manager" };
       }
     }
 
@@ -152,12 +157,12 @@ export async function deleteUser(userId: number): Promise<UpdateAccountState> {
     const admin = adminAPI;
 
     // Attempt to delete the account
-    const success = await admin.deleteAccount(userId);
+    const result = await admin.deleteAccount(userId);
 
-    if (success) {
+    if (result.success) {
       return { success: true, message: "Account deleted successfully" };
     } else {
-      return { success: false, message: "Failed to delete account" };
+      return { success: false, message: result.message || "Failed to delete account" };
     }
   } catch (error) {
     console.error("Error deleting account:", error);

@@ -11,10 +11,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { SerializedClaim, ClaimStatus } from "@/lib/types";
 import { toast } from "@/components/ui/use-toast";
 
 import { CreditCard } from "lucide-react";
+import { ClaimStatus } from "@/backend/claims/claim";
+import { SerializedClaim } from "@/backend/serializedTypes";
 
 interface PendingClaimsReviewProps {
   claims: SerializedClaim[];

@@ -34,19 +34,23 @@ async function InsertDefaultData() {
   adminRole.setEmployeesLineManager(consultant.getId(), lineManager.getId());
 
   // Create a draft claim
-  await createDraftClaim(general);
+  await createDraftClaim(general, "Dinner reservation at the Gall");
 
   // Create a pending claim
-  await createPendingClaim(general, 100);
+  await createPendingClaim(general, "Lunch break with Client", 100);
 
   // Create a accepted claim
-  await createApprovedClaim(general, 500, lineManager);
+  await createApprovedClaim(general, "Valid Dinner Reservation", 500, lineManager);
 
   // Create a rejected claim
-  await createRejectedClaim(general, 1500, lineManager);
+  await createRejectedClaim(general, "Fraudulent Dinner Reservation", 1500, lineManager);
 
   // Create a reimbursed claim
-  await createReimbusedClaim(general, 1000, lineManager, payrollOfficer);
+  await createReimbusedClaim(general, "Travel Costs for Work Sanctioned Conference Trip", 1000, lineManager, payrollOfficer);
+
+  await createPendingClaim(consultant, "Buy Adobe", 10000000000000);
+  await createApprovedClaim(consultant, "Lunch Break", 10, lineManager);
+  await createApprovedClaim(consultant, "Breakfast", 5, lineManager);
 }
 
 InsertDefaultData();

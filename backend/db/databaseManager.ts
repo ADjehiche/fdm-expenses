@@ -10,16 +10,12 @@ import { claimsTable, lineManagersTable, usersTable } from "./schema";
 import { Claim, ClaimStatus } from "../claims/claim";
 import { EmployeeType } from "../employee/utils";
 import bcrypt from "bcryptjs";
+import { EmployeeRole } from "../employee/employeeRole";
+import { BackendResult, CreateBackendResult } from "./utils/consts";
 // We use a server-only check to handle fs operations
 const isServer = typeof window === "undefined";
 // Import fs conditionally - only on server side
 const fs = isServer ? require("fs") : null;
-
-// Forward declaration of the EmployeeRole interface
-import type { EmployeeRole } from "../employee/employeeRole";
-
-// Forward declaration of the EmployeeRole interface
-import type { EmployeeRole } from "../employee/employeeRole";
 
 /**
  * Used to represent the database as a physical class.
@@ -28,7 +24,7 @@ export class DatabaseManager {
   static #instance: DatabaseManager;
   private fileStoragePath = "./backend/db/fileStorage";
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): DatabaseManager {
     if (!this.#instance) {
@@ -308,7 +304,7 @@ export class DatabaseManager {
     });
   }
 
-  async deleteAccount(userId: number): Promise<boolean> {
+  async deleteAccount(userId: number): Promise<BackendResult> {
     const deleteUser = await db
       .delete(usersTable)
       .where(
@@ -319,7 +315,7 @@ export class DatabaseManager {
       )
       .returning();
     if (deleteUser.length === 0) {
-      return false;
+      return CreateBackendResult(false, "DBERR1: Failed to find account or account is administrator");
     }
 
     if (deleteUser[0].lineManagerId) {
@@ -333,11 +329,11 @@ export class DatabaseManager {
         )
         .returning();
       if (deleteLineManager.length === 0) {
-        return false;
+        return CreateBackendResult(false, "DBERR2: Failed to delete account's line manager");
       }
     }
 
-    return true;
+    return CreateBackendResult(true, "Account deleted successfully");
   }
 
   async getManagersEmployees(managerUserId: number): Promise<User[]> {
@@ -409,7 +405,7 @@ export class DatabaseManager {
   async setLineManager(
     employeeUserId: number,
     managerUserId: number
-  ): Promise<boolean> {
+  ): Promise<BackendResult> {
     const updateUser = await db
       .update(usersTable)
       .set({
@@ -419,7 +415,7 @@ export class DatabaseManager {
       .returning();
 
     if (!updateUser) {
-      return false;
+      return CreateBackendResult(false, "DBERR3: Failed to find employee");
     }
 
     const createLineManager = await db
@@ -430,7 +426,10 @@ export class DatabaseManager {
       })
       .returning();
 
-    return createLineManager.length === 1;
+    if (createLineManager.length === 0) {
+      return CreateBackendResult(false, "DBERR4: Failed to create line manager");
+    }
+    return CreateBackendResult(true, "Line manager set succesfully")
   }
 
   /**
@@ -443,7 +442,7 @@ export class DatabaseManager {
   async setEmployeeClassification(
     employeeUserId: number,
     newClassification: EmployeeClassification
-  ): Promise<boolean> {
+  ): Promise<BackendResult> {
     const user = await this.getAccount(employeeUserId);
     if (!user) {
       console.error(
@@ -451,7 +450,7 @@ export class DatabaseManager {
         "Failed to get user for employeeUserId",
         employeeUserId
       );
-      return false;
+      return CreateBackendResult(false, "DBERR5: Failed to find user");
     }
 
     if (user.getEmployeeClassification() == newClassification) {
@@ -460,7 +459,7 @@ export class DatabaseManager {
         "User already has the same classification",
         user.getEmployeeClassification()
       );
-      return false;
+      return CreateBackendResult(false, "DBERR6: User already has the same classification");
     }
 
     if (newClassification == EmployeeClassification.Internal) {
@@ -473,7 +472,7 @@ export class DatabaseManager {
         .where(eq(usersTable.id, employeeUserId))
         .returning();
       if (updateUser.length === 0) {
-        return false;
+        return CreateBackendResult(false, "DBERR7: Failed to update user");
       }
     } else {
       const updateUser = await db
@@ -484,7 +483,7 @@ export class DatabaseManager {
         .where(eq(usersTable.id, employeeUserId))
         .returning();
       if (updateUser.length === 0) {
-        return false;
+        return CreateBackendResult(false, "DBERR8: Failed to update user");
       }
       // call setEmployeeRole when switching to external to delete any data (line manager)
       const changeEmployeeRole = await this.setEmployeeRole(
@@ -492,17 +491,17 @@ export class DatabaseManager {
         EmployeeType.Consultant
       );
       if (!changeEmployeeRole) {
-        return false;
+        return CreateBackendResult(false, "DBERR9: Could not change employee's role");
       }
     }
 
-    return true;
+    return CreateBackendResult(true, "Employee classification set successfully");
   }
 
   async setEmployeeRegion(
     employeeUserId: number,
     region: string
-  ): Promise<boolean> {
+  ): Promise<BackendResult> {
     const updateUser = await db
       .update(usersTable)
       .set({
@@ -510,16 +509,16 @@ export class DatabaseManager {
       })
       .where(eq(usersTable.id, employeeUserId))
       .returning();
-    if (!updateUser) {
-      return false;
+    if (!updateUser || updateUser.length !== 1) {
+      return CreateBackendResult(false, "DBERR10: Failed to find user");
     }
-    return updateUser.length === 1;
+    return CreateBackendResult(true, "Employee region set successfully");
   }
 
   async setEmployeeEmail(
     employeeUserId: number,
     email: string
-  ): Promise<boolean> {
+  ): Promise<BackendResult> {
     const updateUser = await db
       .update(usersTable)
       .set({
@@ -527,10 +526,10 @@ export class DatabaseManager {
       })
       .where(eq(usersTable.id, employeeUserId))
       .returning();
-    if (!updateUser) {
-      return false;
-    }
-    return updateUser.length === 1;
+    if (!updateUser || updateUser.length !== 1)
+      return CreateBackendResult(false, "DBERR11: Failed to find user");
+
+    return CreateBackendResult(true, "Employee email set successfully");
   }
 
   /**
@@ -544,7 +543,7 @@ export class DatabaseManager {
   async setEmployeeRole(
     employeeUserId: number,
     newRole: EmployeeType
-  ): Promise<boolean> {
+  ): Promise<BackendResult> {
     const user = await this.getAccount(employeeUserId);
     if (!user) {
       console.error(
@@ -552,7 +551,7 @@ export class DatabaseManager {
         "Failed to get user for employeeUserId",
         employeeUserId
       );
-      return false;
+      return CreateBackendResult(false, "DBERR12: Failed to find user");
     }
 
     if (user.getEmployeeRole().getType() === newRole) {
@@ -561,7 +560,7 @@ export class DatabaseManager {
         "User already has the same role",
         user.getEmployeeRole().getType()
       );
-      return false;
+      return CreateBackendResult(false, "DBERR13: User already has the same role");
     }
 
     if (
@@ -574,7 +573,7 @@ export class DatabaseManager {
         "DatabaseManager",
         "Cannot switch employee classification from internal to external. Use setEmployeeClassification first"
       );
-      return false;
+      return CreateBackendResult(false, "DBERR14: Cannot switch employee classification from internal to external. Change the employee's classification first");
     }
 
     if (user.getEmployeeRole().getType() == EmployeeType.LineManager) {
@@ -609,11 +608,11 @@ export class DatabaseManager {
       })
       .where(eq(usersTable.id, employeeUserId))
       .returning();
-    if (!updateUser) {
-      return false;
+    if (!updateUser || updateUser.length !== 1) {
+      return CreateBackendResult(false, "DBERR15: Failed to update user role");
     }
 
-    return updateUser.length === 1;
+    return CreateBackendResult(true, "Employee role set successfully");
   }
 
   // Claim table
@@ -844,7 +843,7 @@ export class DatabaseManager {
       accountNumber: string | undefined;
       sortCode: string | undefined;
     }
-  ): Promise<boolean> {
+  ): Promise<BackendResult> {
     const result = await db
       .update(claimsTable)
       .set({
@@ -854,15 +853,15 @@ export class DatabaseManager {
       })
       .where(eq(claimsTable.id, claimId))
       .returning();
-    if (!result) {
-      return false;
+    if (!result || result.length != 1) {
+      return CreateBackendResult(false, "DBERR16: Failed to update claim");
     }
     const updateTime = await this.updateClaimLastUpdated(claimId);
-    if (!updateTime) return false;
-    return result.length === 1;
+    if (!updateTime.success) return updateTime;
+    return CreateBackendResult(true, "Claim bank details updated successfully");
   }
 
-  async updateClaimLastUpdated(claimId: number): Promise<boolean> {
+  async updateClaimLastUpdated(claimId: number): Promise<BackendResult> {
     const result = await db
       .update(claimsTable)
       .set({
@@ -870,16 +869,18 @@ export class DatabaseManager {
       })
       .where(eq(claimsTable.id, claimId))
       .returning();
-    if (!result) {
-      return false;
+
+    if (!result || result.length != 1) {
+      return CreateBackendResult(false, "DBERR17: Failed to update claim last updated time");
     }
-    return result.length === 1;
+
+    return CreateBackendResult(true, "Claim last updated time updated successfully");
   }
 
   async updateClaimFeedback(
     claimId: number,
     feedback: string
-  ): Promise<boolean> {
+  ): Promise<BackendResult> {
     const result = await db
       .update(claimsTable)
       .set({
@@ -887,15 +888,17 @@ export class DatabaseManager {
       })
       .where(eq(claimsTable.id, claimId))
       .returning();
-    if (!result) {
-      return false;
+    if (!result || result.length != 1) {
+      return CreateBackendResult(false, "DBERR18: Failed to update claim feedback");
     }
+
     const updateTime = await this.updateClaimLastUpdated(claimId);
-    if (!updateTime) return false;
-    return result.length === 1;
+    if (!updateTime.success) return updateTime;
+
+    return CreateBackendResult(true, "Claim feedback updated successfully");
   }
 
-  async updateClaimAmount(claimId: number, amount: number): Promise<boolean> {
+  async updateClaimAmount(claimId: number, amount: number): Promise<BackendResult> {
     const result = await db
       .update(claimsTable)
       .set({
@@ -903,18 +906,20 @@ export class DatabaseManager {
       })
       .where(eq(claimsTable.id, claimId))
       .returning();
-    if (!result) {
-      return false;
+    if (!result || result.length != 1) {
+      return CreateBackendResult(false, "DBERR19: Failed to update claim amount");
     }
+
     const updateTime = await this.updateClaimLastUpdated(claimId);
-    if (!updateTime) return false;
-    return result.length === 1;
+    if (!updateTime.success) return updateTime;
+
+    return CreateBackendResult(true, "Claim amount updated successfully");
   }
 
   async updateClaimStatus(
     claimId: number,
     newClaimStatus: ClaimStatus
-  ): Promise<boolean> {
+  ): Promise<BackendResult> {
     const result = await db
       .update(claimsTable)
       .set({
@@ -923,18 +928,19 @@ export class DatabaseManager {
       .where(eq(claimsTable.id, claimId))
       .returning();
 
-    if (!result) {
-      return false;
+    if (!result || result.length != 1) {
+      return CreateBackendResult(false, "DBERR20: Failed to update claim status");
     }
     const updateTime = await this.updateClaimLastUpdated(claimId);
-    if (!updateTime) return false;
-    return result.length === 1;
+    if (!updateTime.success) return updateTime;
+
+    return CreateBackendResult(true, "Claim status updated successfully");
   }
 
   async updateClaimAttemptCount(
     claimId: number,
     newAttemptCount: number
-  ): Promise<boolean> {
+  ): Promise<BackendResult> {
     const result = await db
       .update(claimsTable)
       .set({
@@ -943,12 +949,13 @@ export class DatabaseManager {
       .where(eq(claimsTable.id, claimId))
       .returning();
 
-    if (!result) {
-      return false;
+    if (!result || result.length != 1) {
+      return CreateBackendResult(false, "DBERR21: Failed to update claim attempt count");
     }
+
     const updateTime = await this.updateClaimLastUpdated(claimId);
-    if (!updateTime) return false;
-    return result.length === 1;
+    if (!updateTime.success) return updateTime;
+    return CreateBackendResult(true, "Claim attempt count updated successfully");
   }
 
   async updateClaimDetails(
@@ -958,7 +965,7 @@ export class DatabaseManager {
     amount: number,
     category: string,
     currency: string
-  ): Promise<boolean> {
+  ): Promise<BackendResult> {
     const result = await db
       .update(claimsTable)
       .set({
@@ -971,14 +978,14 @@ export class DatabaseManager {
       .where(eq(claimsTable.id, claimId))
       .returning();
 
-    if (!result) {
-      return false;
+    if (!result || result.length != 1) {
+      return CreateBackendResult(false, "DBERR22: Failed to update claim details");
     }
 
     const updateTime = await this.updateClaimLastUpdated(claimId);
-    if (!updateTime) return false;
+    if (!updateTime.success) return updateTime;
 
-    return result.length === 1;
+    return CreateBackendResult(true, "Claim details updated successfully");
   }
 
   /**
@@ -989,9 +996,9 @@ export class DatabaseManager {
 
     const claimPathExists = fs && fs.existsSync(claimPath);
     if (!claimPathExists) {
-      console.error(
+      console.warn(
         "DatabaseManager",
-        "Get Claim Evidence - Claim path does not exist",
+        "Get Claim Evidence - Claim path does not exist - Claim might not have any evidence",
         claimPath
       );
       return [];
@@ -1029,7 +1036,7 @@ export class DatabaseManager {
     return new File([evidenceFile], evidenceName);
   }
 
-  async addEvidence(claimId: number, file: File): Promise<boolean> {
+  async addEvidence(claimId: number, file: File): Promise<BackendResult> {
     console.log("add evidence", claimId, file);
     const claimPath = `${this.fileStoragePath}/${claimId}`;
     const filePath = `${claimPath}/${file.name}`;
@@ -1041,7 +1048,7 @@ export class DatabaseManager {
         "Add Evidence - File already exists",
         filePath
       );
-      return false;
+      return CreateBackendResult(false, "DBERR23: File already exists");
     }
 
     const claimPathAlreadyExists = fs && fs.existsSync(claimPath);
@@ -1057,18 +1064,18 @@ export class DatabaseManager {
     try {
       fs.writeFileSync(filePath, Buffer.from(await file.arrayBuffer()));
       const updateTime = await this.updateClaimLastUpdated(claimId);
-      if (!updateTime) return false;
-      return true;
+      if (!updateTime.success) return updateTime;
+      return CreateBackendResult(true, "Evidence added successfully");
     } catch (e) {
       console.error("DatabaseManager", "Add Evidence - Error writing file", e);
-      return false;
+      return CreateBackendResult(false, "DBERR24: Error writing file");
     }
   }
 
   async removeEvidence(
     claimId: number,
     evidenceName: string
-  ): Promise<boolean> {
+  ): Promise<BackendResult> {
     const claimPath = `${this.fileStoragePath}/${claimId}`;
     const filePath = `${claimPath}/${evidenceName}`;
     const fileExists = fs && fs.existsSync(filePath);
@@ -1078,7 +1085,7 @@ export class DatabaseManager {
         "Remove Evidence - File does not exist",
         filePath
       );
-      return false;
+      return CreateBackendResult(false, "DBERR25: Evidence file does not exist");
     }
     try {
       fs.unlinkSync(filePath);
@@ -1088,15 +1095,15 @@ export class DatabaseManager {
         filePath
       );
       const updateTime = await this.updateClaimLastUpdated(claimId);
-      if (!updateTime) return false;
-      return true;
+      if (!updateTime.success) return updateTime;
+      return CreateBackendResult(true, "Evidence removed successfully");
     } catch (e) {
       console.error(
         "DatabaseManager",
         "Remove Evidence - Error removing file",
         e
       );
-      return false;
+      return CreateBackendResult(false, "DBERR26: Error removing file");
     }
   }
 
@@ -1155,7 +1162,7 @@ export class DatabaseManager {
    * @param userId User ID whose claim is being deleted.
    * @param claimId The specified claim to delete.
    */
-  async deleteDraftClaim(userId: number, claimId: number) {
+  async deleteDraftClaim(userId: number, claimId: number): Promise<BackendResult> {
     // check if exists
     const claimRows = await this.getOwnClaimsByStatus(
       userId,
@@ -1164,19 +1171,20 @@ export class DatabaseManager {
 
     if (!claimRows) {
       // throw Error doesn't exist
-      throw new Error("Claim doesn't exist!");
+      return CreateBackendResult(false, "DBERR27: Claim doesn't exist");
     }
-    // check if draft
 
+    // check if draft
     if (claimRows[0].getStatus() !== ClaimStatus.DRAFT) {
       // throw Error claimID specified not a draft
-      throw new Error("Claim ID Specified is not a Draft claim!");
+      return CreateBackendResult(false, "DBERR28: Claim ID Specified is not a Draft claim!");
     }
 
     try {
       await db.delete(claimsTable).where(eq(claimsTable.id, claimId));
+      return CreateBackendResult(true, "Claim deleted successfully");
     } catch (error) {
-      throw new Error("Unspecified error, delete failed. ");
+      return CreateBackendResult(false, "DBERR29: Failed to delete claim");
     }
   }
 }
