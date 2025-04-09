@@ -1160,8 +1160,8 @@ export class DatabaseManager {
       // throw Error doesn't exist
       throw new Error("Claim doesn't exist!");
     }
+    
     // check if draft
-
     if (claimRows[0].getStatus() !== ClaimStatus.DRAFT) {
       // throw Error claimID specified not a draft
       throw new Error("Claim ID Specified is not a Draft claim!");

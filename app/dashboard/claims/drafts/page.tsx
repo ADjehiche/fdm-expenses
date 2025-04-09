@@ -17,5 +17,5 @@ export default async function DraftClaimsPage() {
   const draftClaims = response.success ? response.claims || [] : [];
 
   // Pass the data to the client component
-  return <DraftClaimsClient claims={draftClaims} />;
+  return <DraftClaimsClient claims={draftClaims} user={user} />;
 }

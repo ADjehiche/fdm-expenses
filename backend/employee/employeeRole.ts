@@ -235,4 +235,8 @@ export abstract class EmployeeRole {
     const db = DatabaseManager.getInstance();
     return await db.getOwnClaimsByStatus(this.userId, status);
   }
+
+  async deleteDraftClaim(claimId : number)  {
+    await DatabaseManager.getInstance().deleteDraftClaim(this.userId, claimId);
+  }
 }

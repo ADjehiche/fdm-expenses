@@ -24,7 +24,8 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/components/use-toast";
 
-import { submitDraftClaim } from "@/actions/claimActions";
+import { deleteDraftClaim, submitDraftClaim } from "@/actions/claimActions";
+import { SerializedUser } from "@/backend/serializedTypes";
 
 // Helper function for safe date formatting
 function formatRelativeDate(dateString: string): string {
@@ -53,10 +54,12 @@ interface DraftClaimsProps {
     category: string;
     lastUpdated: string;
   }>;
+  user: SerializedUser;
 }
 
 export default function DraftClaimsClient({
   claims: initialClaims,
+  user: user,
 }: DraftClaimsProps) {
   const [claims, setClaims] = useState(initialClaims);
   const [submitting, setSubmitting] = useState<number | null>(null);
@@ -84,6 +87,45 @@ export default function DraftClaimsClient({
         });
 
         // Remove the submitted claim from the list
+        setClaims(claims.filter((claim) => claim.id !== claimId));
+
+        // Force a page refresh to update the data
+        router.refresh();
+      } else {
+        toast({
+          title: "Error",
+          description: response.error || "Failed to submit claim",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error submitting claim:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(null);
+    }
+  };
+
+
+  // Function to handle the delete action
+  const handleDelete = async (user: SerializedUser, claimId: number) => {
+    const userId = parseInt(user.id);
+
+    setSubmitting(claimId);
+    try {
+      const response = await deleteDraftClaim(userId, claimId);
+
+      if (response.success) {
+        toast({
+          title: "Claim deleted successfully",
+          description: "Your claim has been deleted",
+        });
+
+        // Remove the deleted claim from the list
         setClaims(claims.filter((claim) => claim.id !== claimId));
 
         // Force a page refresh to update the data
@@ -208,6 +250,8 @@ export default function DraftClaimsClient({
                           variant="ghost"
                           size="icon"
                           className="cursor-pointer"
+                          onClick={() => handleDelete(user, claim.id)}
+                          disabled={submitting === claim.id}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                           <span className="sr-only">Delete</span>
