@@ -48,7 +48,6 @@ const expenseFormSchema = z.object({
     ),
   currency: z.string().min(1, "Please select a currency"),
   category: z.string().min(1, "Please select a category"),
-  date: z.string().min(1, "Please select a date"),
 });
 
 export default function NewExpenseClaimPage() {
@@ -72,7 +71,6 @@ export default function NewExpenseClaimPage() {
       amount: "",
       currency: "GBP",
       category: "",
-      date: new Date().toISOString().split("T")[0],
     },
   });
 
@@ -295,46 +293,25 @@ export default function NewExpenseClaimPage() {
         <CardContent className="pt-6 bg-white">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem className="transition-all">
-                      <FormLabel className="text-gray-700 font-medium">
-                        Expense Title
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="E.g., Client Meeting Lunch"
-                          className="focus-within:border-gray-400"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-red-500" />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="date"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-700 font-medium">
-                        Date of Expense
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="date"
-                          className="focus-within:border-gray-400"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-red-500" />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem className="transition-all">
+                    <FormLabel className="text-gray-700 font-medium">
+                      Expense Title
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="E.g., Client Meeting Lunch"
+                        className="focus-within:border-gray-400"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-500" />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
