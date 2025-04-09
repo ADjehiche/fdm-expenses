@@ -4,6 +4,6 @@ import { redirect } from "next/navigation";
 
 export default function UserProfile() {
   useEffect(() => {
-    redirect("/dashboard/claims/new");
+    redirect("/dashboard/claims/drafts");
   }, []);
 }

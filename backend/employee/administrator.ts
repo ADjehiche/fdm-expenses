@@ -8,6 +8,7 @@ import {
   getEmployeeType,
   EmployeeType,
 } from "./utils";
+import { BackendResult } from "../db/utils/consts";
 
 export class Administrator extends EmployeeRole {
   private employeeType: EmployeeType = EmployeeType.Administrator;
@@ -99,14 +100,14 @@ export class Administrator extends EmployeeRole {
       newAccount.getId(),
       newEmployeeRole
     );
-    if (!changeRole) {
+    if (!changeRole.success) {
       console.error("Failed to change role");
       return newAccount;
     }
     return await db.getAccount(newAccount.getId());
   }
 
-  async deleteAccount(userId: number): Promise<boolean> {
+  async deleteAccount(userId: number): Promise<BackendResult> {
     const db = DatabaseManager.getInstance();
     return await db.deleteAccount(userId);
   }
@@ -115,7 +116,7 @@ export class Administrator extends EmployeeRole {
    * Changes employee role.
    * If switching employee classification, use `changeEmployeesClassification` first
    */
-  async changeRole(userId: number, newRole: EmployeeType): Promise<boolean> {
+  async changeRole(userId: number, newRole: EmployeeType): Promise<BackendResult> {
     const db = DatabaseManager.getInstance();
     return db.setEmployeeRole(userId, newRole);
   }
@@ -137,17 +138,17 @@ export class Administrator extends EmployeeRole {
   async setEmployeesLineManager(
     employeeUserId: number,
     managerUserId: number
-  ): Promise<boolean> {
+  ): Promise<BackendResult> {
     const db = DatabaseManager.getInstance();
     return db.setLineManager(employeeUserId, managerUserId);
   }
 
-  async changeEmployeesRegion(employeeUserId: number, region: string) {
+  async changeEmployeesRegion(employeeUserId: number, region: string): Promise<BackendResult> {
     const db = DatabaseManager.getInstance();
     return db.setEmployeeRegion(employeeUserId, region);
   }
 
-  async changeEmployeesEmail(employeeUserId: number, email: string) {
+  async changeEmployeesEmail(employeeUserId: number, email: string): Promise<BackendResult> {
     const db = DatabaseManager.getInstance();
     return db.setEmployeeEmail(employeeUserId, email);
   }
@@ -159,7 +160,7 @@ export class Administrator extends EmployeeRole {
   async changeEmployeesClassification(
     employeeUserId: number,
     newClassification: EmployeeClassification
-  ) {
+  ): Promise<BackendResult> {
     const db = DatabaseManager.getInstance();
     return db.setEmployeeClassification(employeeUserId, newClassification);
   }

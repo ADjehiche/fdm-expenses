@@ -416,20 +416,12 @@ export async function deleteDraftClaim(userId: number, claimId: number): Promise
   success: boolean;
   error?: string;
 }> {
-  try {
-    const db = DatabaseManager.getInstance();
+  const db = DatabaseManager.getInstance();
 
-    // Delete claim
-    await db.deleteDraftClaim(userId, claimId);
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error deleting claim:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "An unexpected error occurred",
-    };
+  const response = await db.deleteDraftClaim(userId, claimId);
+  return {
+    success: response.success,
+    error: response.success ? undefined : response.message,
   }
 }
 
