@@ -178,10 +178,6 @@ export default function PendingClaimsReview({
                   <TableCell>{formatDate(claim.lastUpdated)}</TableCell>
                   <TableCell>
                     {formatCurrency(claim.amount, claim.currency || "GBP")}
-                    {currency_symbols[
-                      claim.currency as keyof typeof currency_symbols
-                    ] || ""}
-                    {claim.amount.toFixed(2)}
                   </TableCell>
                   <TableCell>
                     <span
@@ -233,7 +229,7 @@ export default function PendingClaimsReview({
                         variant="outline"
                         size="icon"
                         className="h-8 w-8 bg-gray-50 hover:bg-gray-100 text-gray-600 border-none cursor-pointer"
-                        title="Reject Claim"
+                        title="View Claim"
                       >
                         <Link href={`/dashboard/claims/view/${claim.id}`}>
                           <Eye className="h-4 w-4" />
