@@ -16,6 +16,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { SerializedClaim, ClaimStatus } from "@/lib/types";
 import { toast } from "@/components/ui/use-toast";
 
+var currency_symbols = {
+    'USD': '$', // US Dollar
+    'EUR': '€', // Euro
+    'CRC': '₡', // Costa Rican Colón
+    'GBP': '£', // British Pound Sterling
+    'ILS': '₪', // Israeli New Sheqel
+    'INR': '₹', // Indian Rupee
+    'JPY': '¥', // Japanese Yen
+    'KRW': '₩', // South Korean Won
+    'NGN': '₦', // Nigerian Naira
+    'PHP': '₱', // Philippine Peso
+    'PLN': 'zł', // Polish Zloty
+    'PYG': '₲', // Paraguayan Guarani
+    'THB': '฿', // Thai Baht
+    'UAH': '₴', // Ukrainian Hryvnia
+    'VND': '₫', // Vietnamese Dong
+};
+
 interface PendingClaimsReviewProps {
   claims: SerializedClaim[];
   approveClaimAction: (id: string) => Promise<boolean>;
@@ -111,88 +129,101 @@ export default function PendingClaimsReview({
   };
   console.log(claims);
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Claims Pending Review</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {claims.length === 0 ? (
-          <p className="text-center py-4">No pending claims to review</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Employee</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {claims.map((claim) => (
-                <TableRow key={claim.id}>
-                  <TableCell className="font-medium">{claim.title}</TableCell>
-                  <TableCell>{claim.employeeId}</TableCell>
-                  <TableCell>{formatDate(claim.lastUpdated)}</TableCell>
-                  <TableCell>${claim.amount.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        claim.status === ClaimStatus.PENDING
-                          ? "bg-yellow-100 text-yellow-800"
-                          : ""
-                      }`}
-                    >
-                      {claim.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Tabs defaultValue="approve" className="w-full">
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="approve">Approve</TabsTrigger>
-                        <TabsTrigger value="reject">Reject</TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="approve" className="mt-2">
-                        <Button
-                          onClick={() => handleApprove(claim.id)}
-                          disabled={isLoading[claim.id]}
-                          className="w-full"
-                        >
-                          {isLoading[claim.id]
-                            ? "Processing..."
-                            : "Approve Claim"}
-                        </Button>
-                      </TabsContent>
-                      <TabsContent value="reject" className="space-y-2 mt-2">
-                        <Textarea
-                          placeholder="Provide feedback on why the claim is being rejected"
-                          value={feedbackMap[claim.id] || ""}
-                          onChange={(e) =>
-                            handleFeedbackChange(claim.id, e.target.value)
-                          }
-                          className="min-h-[80px] bg-white"
-                        />
-                        <Button
-                          onClick={() => handleReject(claim.id)}
-                          disabled={isLoading[claim.id]}
-                          variant="destructive"
-                          className="w-full"
-                        >
-                          {isLoading[claim.id]
-                            ? "Processing..."
-                            : "Reject Claim"}
-                        </Button>
-                      </TabsContent>
-                    </Tabs>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
-    </Card>
+    <div>
+      {claims.map((claim) => (
+        <div
+          className="rounded-lg bg-white text-card-foreground shadow-sm border border-gray-200 border-solid mb-4"
+          key={claim.id}
+        >
+          {/* Header Section */}
+          <div className="bg-gray-100 p-4 rounded-t-lg">
+            <h1 className="text-lg font-bold">{claim.title}</h1>
+          </div>
+
+          {/* Body Section */}
+          <div className="p-6 flex flex-col justify-between space-y-2">
+            <p><b>Description:</b> {claim.description}</p>
+            <p><b>Employee:</b> {claim.employeeName}</p>
+            <p><b>Last updated: </b> {formatDate(claim.lastUpdated)}</p>
+            <p>
+              <b>Amount:</b>{" "}
+              {currency_symbols[claim.currency as keyof typeof currency_symbols] ||
+                ""}
+              {claim.amount.toFixed(2)}
+            </p>
+            <p><b>Category:</b> {claim.category}</p>
+            <p>
+              <span
+                className={`px-2 py-1 rounded-full text-xs ${
+                  claim.status === ClaimStatus.PENDING
+                    ? "bg-yellow-100 text-yellow-800"
+                    : ""
+                }`}
+              >
+                {claim.status}
+              </span>
+              <span
+                className={`px-2 py-1 rounded-full text-xs ${
+                  claim.attemptCount > 2
+                    ? "bg-red-100 text-red-800"
+                    : claim.attemptCount > 1
+                      ? "bg-yellow-100 text-yellow-800"
+                      : "bg-green-100 text-green-800"
+                }`}
+              >
+                Attempt count: {claim.attemptCount}
+              </span>
+            </p>
+
+            {/* Approve/Reject Tabs */}
+            <div id="approveBox">
+              <Tabs defaultValue="approve" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 bg-gray-100 rounded-md">
+                  <TabsTrigger
+                    value="approve"
+                    className="py-2 text-center hover:bg-gray-200 focus:bg-gray-300"
+                  >
+                    Approve
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="reject"
+                    className="py-2 text-center hover:bg-gray-200 focus:bg-gray-300"
+                  >
+                    Reject
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="approve" className="mt-2">
+                  <Button
+                    onClick={() => handleApprove(claim.id)}
+                    disabled={isLoading[claim.id]}
+                    className="w-full bg-green-300  hover:bg-green-600 hover:text-white"
+                  >
+                    {isLoading[claim.id] ? "Processing..." : "Approve Claim"}
+                  </Button>
+                </TabsContent>
+                <TabsContent value="reject" className="space-y-2 mt-2">
+                  <Textarea
+                    placeholder="Provide feedback on why the claim is being rejected"
+                    value={feedbackMap[claim.id] || ""}
+                    onChange={(e) =>
+                      handleFeedbackChange(claim.id, e.target.value)
+                    }
+                    className="min-h-[80px] bg-white"
+                  />
+                  <Button
+                    onClick={() => handleReject(claim.id)}
+                    disabled={isLoading[claim.id]}
+                    variant="destructive"
+                    className="w-full bg-red-300 hover:bg-red-600 hover:text-white"
+                  >
+                    {isLoading[claim.id] ? "Processing..." : "Reject Claim"}
+                  </Button>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
