@@ -22,6 +22,7 @@ export interface SerializedUser {
 export interface SerializedClaim {
   id: string;
   employeeId: number;
+  employeeName?: string; // Added employee name field
   amount: number;
   status: ClaimStatus;
   title: string;

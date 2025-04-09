@@ -51,20 +51,32 @@ export default async function ManagePage() {
   const claims = await getApprovedClaims(user);
 
   // Convert the claims to SerializedClaim format expected by the component
-  const serializedClaims: SerializedClaim[] = claims.map((claim) => ({
-    id: claim.getId().toString(),
-    employeeId: claim.getEmployeeId(),
-    amount: claim.getAmount(),
-    status: claim.getStatus(),
-    title: claim.getTitle(),
-    description: claim.getDescription(),
-    category: claim.getCategory(),
-    currency: claim.getCurrency(),
-    createdAt: claim.getCreatedAt().toISOString(),
-    lastUpdated: claim.getLastUpdated().toISOString(),
-    attemptCount: claim.getAttemptCount(),
-    feedback: claim.getFeedback(),
-  }));
+  const serializedClaims: SerializedClaim[] = await Promise.all(
+    claims.map(async (claim) => {
+      // Fetch employee details to get the name
+      const employeeId = claim.getEmployeeId();
+      const employee = await db.getAccount(employeeId);
+      const employeeName = employee
+        ? `${employee.getFirstName()} ${employee.getFamilyName()}`
+        : "Unknown Employee";
+
+      return {
+        id: claim.getId().toString(),
+        employeeId: claim.getEmployeeId(),
+        employeeName: employeeName, // Include employee name
+        amount: claim.getAmount(),
+        status: claim.getStatus(),
+        title: claim.getTitle(),
+        description: claim.getDescription(),
+        category: claim.getCategory(),
+        currency: claim.getCurrency(),
+        createdAt: claim.getCreatedAt().toISOString(),
+        lastUpdated: claim.getLastUpdated().toISOString(),
+        attemptCount: claim.getAttemptCount(),
+        feedback: claim.getFeedback(),
+      };
+    })
+  );
 
   return (
     <div className="p-4">

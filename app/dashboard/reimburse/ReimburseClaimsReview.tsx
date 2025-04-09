@@ -30,9 +30,14 @@ export default function ReimburseClaimsReview({
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
 
-  // Convert date string to formatted date
+  // Convert date string to DD/MM/YY format
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+    });
   };
 
   // Format currency based on claim's currency
@@ -103,7 +108,9 @@ export default function ReimburseClaimsReview({
               {claims.map((claim) => (
                 <TableRow key={claim.id}>
                   <TableCell className="font-medium">{claim.title}</TableCell>
-                  <TableCell>{claim.employeeId}</TableCell>
+                  <TableCell>
+                    {claim.employeeName || "Unknown Employee"}
+                  </TableCell>
                   <TableCell>{formatDate(claim.lastUpdated)}</TableCell>
                   <TableCell>
                     {formatCurrency(claim.amount, claim.currency || "GBP")}
