@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/use-toast";
-import { Camera, Download, Eye, Upload, X } from "lucide-react";
+import { Camera, Download, Eye, Upload, X, Trash2 } from "lucide-react";
 
 const expenseFormSchema = zod.object({
   title: zod.string().min(3, "Title must be at least 3 characters"),
@@ -60,6 +60,8 @@ export default function EditClaimForm({ claim }: EditClaimFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useUser();
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize evidence files from the claim data
@@ -142,6 +144,53 @@ export default function EditClaimForm({ claim }: EditClaimFormProps) {
     }
   }
 
+  // Handle evidence file upload
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingFile(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", files[0]);
+
+      const response = await fetch(`/api/claims/${claim.id}/evidence`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "File uploaded",
+          description: "Evidence file has been added successfully.",
+        });
+        window.location.reload(); // Refresh to show new file
+      } else {
+        toast({
+          title: "Upload failed",
+          description: result.error || "Failed to upload evidence file.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      toast({
+        title: "Upload failed",
+        description: "An unexpected error occurred during file upload.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""; // Reset input
+      }
+    }
+  };
   // Handle file change - matching the new page implementation
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -558,8 +607,17 @@ export default function EditClaimForm({ claim }: EditClaimFormProps) {
                             className="inline-flex items-center text-blue-600 hover:text-blue-800 text-xs"
                           >
                             <Eye className="h-3 w-3 mr-1" />
-                            View
                           </a>
+                          <Button
+                            onClick={() => {
+                              handleRemoveLocalEvidence(index);
+                              handleRemoveEvidence(index);
+                            }}
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-red-600 text-xs cursor-pointer"
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -579,7 +637,7 @@ export default function EditClaimForm({ claim }: EditClaimFormProps) {
                           type="file"
                           multiple
                           className="hidden"
-                          onChange={handleFileChange}
+                          onChange={handleFileUpload}
                           disabled={uploading}
                         />
                       </label>

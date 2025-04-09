@@ -144,7 +144,8 @@ export class Claim {
   public async addEvidence(evidenceFile: File): Promise<boolean> {
     if (
       this.status !== ClaimStatus.DRAFT &&
-      this.status !== ClaimStatus.PENDING
+      this.status !== ClaimStatus.PENDING &&
+      this.status !== ClaimStatus.REJECTED
     ) {
       console.error(
         "ERROR - Claim has to be in draft state to add evidence",
