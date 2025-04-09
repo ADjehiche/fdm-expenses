@@ -97,7 +97,7 @@ const updateClaim = async (
 ): Promise<Claim> => {
   const updatedClaim = await emp
     .getEmployeeRole()
-    .updateClaimAmount(claim, 100);
+    .updateClaimAmount(claim, newValue);
   if (!updatedClaim) {
     throw new Error(`${emp.getEmployeeType()} Claim Update failed`);
   }
