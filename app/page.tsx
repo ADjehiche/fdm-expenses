@@ -18,26 +18,6 @@ export default function Home() {
               <Image src="/fdmlogo.png" alt="" width={150} height={0} />
             </a>
           </div>
-          <nav className="hidden md:flex space-x-6">
-            <Link
-              href="/about"
-              className="hover:text-[#c3fa04] transition-colors"
-            >
-              About
-            </Link>
-            <Link
-              href="/contact"
-              className="hover:text-[#c3fa04] transition-colors"
-            >
-              Contact
-            </Link>
-            <Link
-              href="/login"
-              className="hover:text-[#c3fa04] transition-colors"
-            >
-              Login
-            </Link>
-          </nav>
           <Button
             variant="outline"
             className="md:hidden text-white border-white hover:bg-[#c3fa04] hover:text-white"
