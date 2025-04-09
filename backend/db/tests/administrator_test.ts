@@ -87,7 +87,7 @@ async function TestAdministrator() {
         throw new Error(`Unexpected number of accounts in database: ${allAccounts.length}`);
     }
     const deleted = await administratorRole.deleteAccount(employee.getId());
-    if (!deleted.success) {
+    if (!deleted) {
         throw new Error("Employee delete failed");
     }
     const allAccountsAfterDelete = await administratorRole.getAccounts();
