@@ -10,7 +10,13 @@ import { claimsTable, lineManagersTable, usersTable } from "./schema";
 import { Claim, ClaimStatus } from "../claims/claim";
 import { EmployeeType } from "../employee/utils";
 import bcrypt from "bcryptjs";
-import fs from "fs";
+// We use a server-only check to handle fs operations
+const isServer = typeof window === "undefined";
+// Import fs conditionally - only on server side
+const fs = isServer ? require("fs") : null;
+
+// Forward declaration of the EmployeeRole interface
+import type { EmployeeRole } from "../employee/employeeRole";
 
 // Forward declaration of the EmployeeRole interface
 import type { EmployeeRole } from "../employee/employeeRole";
@@ -981,7 +987,7 @@ export class DatabaseManager {
   getAllClaimEvidence(claimId: number): string[] {
     const claimPath = `${this.fileStoragePath}/${claimId}`;
 
-    const claimPathExists = fs.existsSync(claimPath);
+    const claimPathExists = fs && fs.existsSync(claimPath);
     if (!claimPathExists) {
       console.error(
         "DatabaseManager",
@@ -1009,7 +1015,7 @@ export class DatabaseManager {
   getClaimEvidenceFile(claimId: number, evidenceName: string): File | null {
     const evidencePath = `${this.fileStoragePath}/${claimId}/${evidenceName}`;
 
-    const evidencePathExists = fs.existsSync(evidencePath);
+    const evidencePathExists = fs && fs.existsSync(evidencePath);
     if (!evidencePathExists) {
       console.error(
         "DatabaseManager",
@@ -1028,7 +1034,7 @@ export class DatabaseManager {
     const claimPath = `${this.fileStoragePath}/${claimId}`;
     const filePath = `${claimPath}/${file.name}`;
 
-    const fileAlreadyExists = fs.existsSync(filePath);
+    const fileAlreadyExists = fs && fs.existsSync(filePath);
     if (fileAlreadyExists) {
       console.error(
         "DatabaseManager",
@@ -1038,7 +1044,7 @@ export class DatabaseManager {
       return false;
     }
 
-    const claimPathAlreadyExists = fs.existsSync(claimPath);
+    const claimPathAlreadyExists = fs && fs.existsSync(claimPath);
     console.log("claimPathAlreadyExists", claimPathAlreadyExists);
     if (!claimPathAlreadyExists) {
       console.log(
@@ -1065,7 +1071,7 @@ export class DatabaseManager {
   ): Promise<boolean> {
     const claimPath = `${this.fileStoragePath}/${claimId}`;
     const filePath = `${claimPath}/${evidenceName}`;
-    const fileExists = fs.existsSync(filePath);
+    const fileExists = fs && fs.existsSync(filePath);
     if (!fileExists) {
       console.error(
         "DatabaseManager",

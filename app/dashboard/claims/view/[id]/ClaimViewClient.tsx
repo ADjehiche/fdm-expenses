@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -11,6 +11,9 @@ import {
   AlertCircle,
   CheckCircle,
   XCircle,
+  Trash2,
+  Upload,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +49,14 @@ enum ClaimStatus {
   REIMBURSED = "Reimbursed",
 }
 
+// Helper function for formatting currency
+const formatCurrency = (amount: number, currency: string = "GBP") => {
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency,
+  }).format(amount);
+};
+
 // Helper function for formatting dates
 function formatRelativeDate(dateString: string): string {
   try {
@@ -57,14 +68,6 @@ function formatRelativeDate(dateString: string): string {
     console.error("Error formatting date:", error);
     return "Unknown";
   }
-}
-
-// Helper function for formatting currency
-function formatCurrency(amount: number, currency: string = "GBP"): string {
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: currency,
-  }).format(amount);
 }
 
 // Map status to UI elements
@@ -137,6 +140,9 @@ export default function ClaimViewClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rejectFeedback, setRejectFeedback] = useState("");
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [deletingFile, setDeletingFile] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Determine user permissions based on role
   const isLineManager = userRole === "Line Manager";
@@ -256,6 +262,97 @@ export default function ClaimViewClient({
     }
   };
 
+  // Handle evidence file upload
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingFile(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", files[0]);
+
+      const response = await fetch(`/api/claims/${claim.id}/evidence`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "File uploaded",
+          description: "Evidence file has been added successfully.",
+        });
+        window.location.reload(); // Refresh to show new file
+      } else {
+        toast({
+          title: "Upload failed",
+          description: result.error || "Failed to upload evidence file.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      toast({
+        title: "Upload failed",
+        description: "An unexpected error occurred during file upload.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""; // Reset input
+      }
+    }
+  };
+
+  // Handle evidence file deletion
+  const handleDeleteFile = async (filename: string) => {
+    if (!confirm(`Are you sure you want to delete ${filename}?`)) return;
+
+    setDeletingFile(filename);
+
+    try {
+      const response = await fetch(
+        `/api/claims/${claim.id}/evidence?filename=${encodeURIComponent(
+          filename
+        )}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "File deleted",
+          description: "Evidence file has been removed successfully.",
+        });
+        window.location.reload(); // Refresh to update file list
+      } else {
+        toast({
+          title: "Deletion failed",
+          description: result.error || "Failed to delete evidence file.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      toast({
+        title: "Deletion failed",
+        description: "An unexpected error occurred while deleting the file.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingFile(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -347,15 +444,51 @@ export default function ClaimViewClient({
                       <span className="truncate max-w-[200px]">
                         {file.name}
                       </span>
-                      <a
-                        href={file.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center text-blue-600 hover:text-blue-800"
-                      >
-                        <Download className="h-4 w-4 mr-1" />
-                        View
-                      </a>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={file.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center text-blue-600 hover:text-blue-800"
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          View
+                        </a>
+                        {/* Only allow deletion if user owns the claim and it's in Draft or Rejected status */}
+                        {isOwnClaim &&
+                          (claim.status === ClaimStatus.DRAFT ||
+                            claim.status === ClaimStatus.REJECTED) && (
+                            <Button
+                              variant="destructive"
+                              className="bg-red-500 hover:bg-red-600"
+                              onClick={() => handleDeleteFile(file.name)}
+                              disabled={deletingFile === file.name}
+                            >
+                              {deletingFile === file.name ? (
+                                <svg
+                                  className="animate-spin h-4 w-4"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  ></circle>
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  ></path>
+                                </svg>
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -364,6 +497,27 @@ export default function ClaimViewClient({
                   No evidence files attached
                 </p>
               )}
+              {/* Only show upload button if user owns the claim and it's in Draft or Rejected status */}
+              {isOwnClaim &&
+                (claim.status === ClaimStatus.DRAFT ||
+                  claim.status === ClaimStatus.REJECTED) && (
+                  <div className="mt-4">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingFile}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      {uploadingFile ? "Uploading..." : "Upload Evidence"}
+                    </Button>
+                  </div>
+                )}
             </CardContent>
           </Card>
 

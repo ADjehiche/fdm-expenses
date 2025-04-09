@@ -1,11 +1,11 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
+import * as zod from "zod";
 import { useUser } from "@/app/contexts/UserContext";
 import { SerializedClaim } from "@/backend/serializedTypes";
 // Import server actions
@@ -32,12 +32,14 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/use-toast";
-import { Camera, Upload, X } from "lucide-react";
+import { Camera, Download, Eye, Upload, X } from "lucide-react";
 
-const expenseFormSchema = z.object({
-  title: z.string().min(3, "Title must be at least 3 characters"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  amount: z
+const expenseFormSchema = zod.object({
+  title: zod.string().min(3, "Title must be at least 3 characters"),
+  description: zod
+    .string()
+    .min(10, "Description must be at least 10 characters"),
+  amount: zod
     .string()
     .refine(
       (val) => !isNaN(Number.parseFloat(val)) && Number.parseFloat(val) > 0,
@@ -45,9 +47,9 @@ const expenseFormSchema = z.object({
         message: "Amount must be a positive number",
       }
     ),
-  currency: z.string().min(1, "Please select a currency"),
-  category: z.string().min(1, "Please select a category"),
-  date: z.string().min(1, "Please select a date"),
+  currency: zod.string().min(1, "Please select a currency"),
+  category: zod.string().min(1, "Please select a category"),
+  date: zod.string().min(1, "Please select a date"),
 });
 
 interface EditClaimFormProps {
@@ -59,16 +61,32 @@ export default function EditClaimForm({ claim }: EditClaimFormProps) {
   const { toast } = useToast();
   const { user } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Initialize evidence files from the claim data
   const [evidence, setEvidence] = useState<
-    { name: string; preview?: string }[]
-  >(claim.evidence ? claim.evidence.map((name) => ({ name })) : []);
-  const [realFiles, setRealFiles] = useState<File[]>([]);
+    { name: string; url?: string; preview?: string }[]
+  >([]);
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  // Initialize evidence files from the claim
+  useEffect(() => {
+    if (claim.evidence && claim.evidence.length > 0) {
+      setEvidence(
+        claim.evidence.map((file) => ({
+          name: file.name,
+          url: file.url,
+        }))
+      );
+    }
+  }, [claim.evidence]);
+
+  const [realFiles, setRealFiles] = useState<File[]>([]);
 
   // Parse the claim date from ISO string to YYYY-MM-DD format
   const claimDate = new Date(claim.createdAt).toISOString().split("T")[0];
 
-  const form = useForm<z.infer<typeof expenseFormSchema>>({
+  const form = useForm<zod.infer<typeof expenseFormSchema>>({
     resolver: zodResolver(expenseFormSchema),
     defaultValues: {
       title: claim.title || "",
@@ -80,7 +98,7 @@ export default function EditClaimForm({ claim }: EditClaimFormProps) {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof expenseFormSchema>) {
+  async function onSubmit(values: zod.infer<typeof expenseFormSchema>) {
     setIsSubmitting(true);
 
     try {
@@ -194,24 +212,77 @@ export default function EditClaimForm({ claim }: EditClaimFormProps) {
     });
   };
 
-  const handleRemoveEvidence = (index: number) => {
-    const file = evidence[index];
-
-    // If there's a preview URL, revoke it to free memory
-    if (file.preview) {
-      URL.revokeObjectURL(file.preview);
+  // Handle file deletion for newly added files that haven't been uploaded yet
+  const handleRemoveLocalEvidence = (index: number) => {
+    const newEvidence = [...evidence];
+    // If it's a local file with preview URL, revoke it to free memory
+    if (newEvidence[index].preview) {
+      URL.revokeObjectURL(newEvidence[index].preview!);
     }
 
     // Remove the file from state
-    const newEvidence = [...evidence];
     newEvidence.splice(index, 1);
     setEvidence(newEvidence);
 
-    // Here you would call the server to remove the file from the claim as well
     toast({
       title: "Evidence removed",
-      description: `File "${file.name}" has been removed from your claim`,
+      description: `File has been removed from your draft claim`,
     });
+  };
+
+  // Handle file deletion for already uploaded evidence files
+  const handleRemoveEvidence = async (index: number) => {
+    const file = evidence[index];
+
+    if (!confirm(`Are you sure you want to delete ${file.name}?`)) return;
+
+    setDeleting(file.name);
+
+    try {
+      // Use fetch to call our API endpoint for deleting evidence
+      const response = await fetch(
+        `/api/claims/${claim.id}/evidence?filename=${encodeURIComponent(
+          file.name
+        )}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok) {
+        // If the preview URL exists, revoke it to free memory
+        if (file.preview) {
+          URL.revokeObjectURL(file.preview);
+        }
+
+        // Remove the file from state
+        const newEvidence = [...evidence];
+        newEvidence.splice(index, 1);
+        setEvidence(newEvidence);
+
+        toast({
+          title: "Evidence removed",
+          description: `File "${file.name}" has been removed from your claim`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to delete evidence file",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while deleting the file",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(null);
+    }
   };
 
   return (
@@ -434,9 +505,35 @@ export default function EditClaimForm({ claim }: EditClaimFormProps) {
                         variant="ghost"
                         size="icon"
                         className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-white hover:bg-destructive/90"
-                        onClick={() => handleRemoveEvidence(index)}
+                        onClick={() =>
+                          file.url
+                            ? handleRemoveEvidence(index)
+                            : handleRemoveLocalEvidence(index)
+                        }
+                        disabled={deleting === file.name}
                       >
-                        <X className="h-4 w-4" />
+                        {deleting === file.name ? (
+                          <svg
+                            className="animate-spin h-3 w-3"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                        ) : (
+                          <X className="h-4 w-4" />
+                        )}
                       </Button>
                       {file.preview ? (
                         <img
@@ -452,6 +549,19 @@ export default function EditClaimForm({ claim }: EditClaimFormProps) {
                       <p className="text-xs mt-1 truncate font-medium">
                         {file.name}
                       </p>
+                      {file.url && (
+                        <div className="mt-2 flex justify-center">
+                          <a
+                            href={file.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-blue-600 hover:text-blue-800 text-xs"
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            View
+                          </a>
+                        </div>
+                      )}
                     </div>
                   ))}
                   <div className="flex gap-2">

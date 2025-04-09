@@ -4,9 +4,9 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/actions/loginauth";
 import { DatabaseManager } from "@/backend/db/databaseManager";
 import { SerializedClaim } from "@/backend/serializedTypes";
+import { ClaimStatus } from "@/backend/claims/claim";
 import EditClaimForm from "./EditClaimForm";
 
-// ✅ Explicitly declare a default export with the correct signature
 export default async function EditClaimPage({
   params,
 }: {
@@ -35,6 +35,24 @@ export default async function EditClaimPage({
     redirect("/dashboard/claims");
   }
 
+  // Check if the claim is in Draft or Rejected status
+  // Only these statuses can be edited
+  if (
+    claim.getStatus() !== ClaimStatus.DRAFT &&
+    claim.getStatus() !== ClaimStatus.REJECTED
+  ) {
+    console.error(
+      "Claim cannot be edited because it's not in Draft or Rejected status"
+    );
+    redirect("/dashboard/claims/view/" + claimId); // Redirect to view page instead
+  }
+
+  // Format evidence files for the client component
+  const evidenceFiles = claim.getAllEvidence().map((filename) => ({
+    name: filename,
+    url: `/api/claims/${claimId}/evidence/${encodeURIComponent(filename)}`,
+  }));
+
   const serializedClaim: SerializedClaim = {
     id: claim.getId().toString(),
     employeeId: claim.getEmployeeId(),
@@ -48,6 +66,7 @@ export default async function EditClaimPage({
     lastUpdated: claim.getLastUpdated().toISOString(),
     attemptCount: claim.getAttemptCount(),
     feedback: claim.getFeedback(),
+    evidence: evidenceFiles, // Add evidence files to the serialized claim
   };
 
   return <EditClaimForm claim={serializedClaim} />;
