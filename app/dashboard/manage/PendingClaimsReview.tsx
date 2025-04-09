@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { SerializedClaim, ClaimStatus } from "@/lib/types";
+import { SerializedClaim } from "@/lib/types";
+import { ClaimStatus } from "@/backend/claims/claim";
 import { toast } from "@/components/ui/use-toast";
 import { CheckCircle, XCircle, AlertCircle, Eye } from "lucide-react";
 import {
@@ -23,6 +24,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
+var currency_symbols = {
+  USD: "$", // US Dollar
+  EUR: "€", // Euro
+  CRC: "₡", // Costa Rican Colón
+  GBP: "£", // British Pound Sterling
+  ILS: "₪", // Israeli New Sheqel
+  INR: "₹", // Indian Rupee
+  JPY: "¥", // Japanese Yen
+  KRW: "₩", // South Korean Won
+  NGN: "₦", // Nigerian Naira
+  PHP: "₱", // Philippine Peso
+  PLN: "zł", // Polish Zloty
+  PYG: "₲", // Paraguayan Guarani
+  THB: "฿", // Thai Baht
+  UAH: "₴", // Ukrainian Hryvnia
+  VND: "₫", // Vietnamese Dong
+};
 
 interface PendingClaimsReviewProps {
   claims: SerializedClaim[];
@@ -147,6 +166,7 @@ export default function PendingClaimsReview({
                 <TableHead>Date</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Attempt count</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -158,6 +178,10 @@ export default function PendingClaimsReview({
                   <TableCell>{formatDate(claim.lastUpdated)}</TableCell>
                   <TableCell>
                     {formatCurrency(claim.amount, claim.currency || "GBP")}
+                    {currency_symbols[
+                      claim.currency as keyof typeof currency_symbols
+                    ] || ""}
+                    {claim.amount.toFixed(2)}
                   </TableCell>
                   <TableCell>
                     <span
@@ -168,6 +192,19 @@ export default function PendingClaimsReview({
                       }`}
                     >
                       {claim.status}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        claim.attemptCount > 2
+                          ? "bg-red-100 text-red-800"
+                          : claim.attemptCount > 1
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-green-100 text-green-800"
+                      }`}
+                    >
+                      Attempt count: {claim.attemptCount}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">

@@ -1,13 +1,14 @@
-import { EmployeeRole, EmployeeType } from "./employeeRole";
+import { EmployeeRole } from "./employeeRole";
+import { EmployeeType } from "./utils";
 
 export class Consultant extends EmployeeRole {
-    employeeType: EmployeeType = EmployeeType.Consultant;
+  employeeType: EmployeeType = EmployeeType.Consultant;
 
-    constructor(userId: number) {
-        super(userId);
-    }
+  constructor(userId: number) {
+    super(userId);
+  }
 
-    getType(): EmployeeType {
-        return this.employeeType;
-    }
+  getType(): EmployeeType {
+    return this.employeeType;
+  }
 }
