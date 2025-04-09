@@ -32,6 +32,10 @@ export interface SerializedClaim {
   lastUpdated: string;
   attemptCount: number;
   feedback: string;
+  evidence?: Array<{
+    name: string;
+    url: string;
+  }>;
 }
 
 /**

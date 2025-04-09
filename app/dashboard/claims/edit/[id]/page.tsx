@@ -4,7 +4,9 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/actions/loginauth";
 import { DatabaseManager } from "@/backend/db/databaseManager";
 import { SerializedClaim } from "@/backend/serializedTypes";
+import { ClaimStatus } from "@/backend/claims/claim";
 import EditClaimForm from "./EditClaimForm";
+
 /**
  * This page is responsible for fetching the claim data for editing
  * It will check if the user is authorized to edit the claim
@@ -41,6 +43,24 @@ export default async function EditClaimPage({
     redirect("/dashboard/claims"); // Redirect if not authorized
   }
 
+  // Check if the claim is in Draft or Rejected status
+  // Only these statuses can be edited
+  if (
+    claim.getStatus() !== ClaimStatus.DRAFT &&
+    claim.getStatus() !== ClaimStatus.REJECTED
+  ) {
+    console.error(
+      "Claim cannot be edited because it's not in Draft or Rejected status"
+    );
+    redirect("/dashboard/claims/view/" + claimId); // Redirect to view page instead
+  }
+
+  // Format evidence files for the client component
+  const evidenceFiles = claim.getAllEvidence().map((filename) => ({
+    name: filename,
+    url: `/api/claims/${claimId}/evidence/${encodeURIComponent(filename)}`,
+  }));
+
   // Convert the claim to a serialized format to pass to the client component
   const serializedClaim: SerializedClaim = {
     id: claim.getId().toString(),
@@ -55,6 +75,7 @@ export default async function EditClaimPage({
     lastUpdated: claim.getLastUpdated().toISOString(),
     attemptCount: claim.getAttemptCount(),
     feedback: claim.getFeedback(),
+    evidence: evidenceFiles, // Add evidence files to the serialized claim
   };
 
   return <EditClaimForm claim={serializedClaim} />;

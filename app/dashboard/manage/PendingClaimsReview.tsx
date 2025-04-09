@@ -46,6 +46,14 @@ export default function PendingClaimsReview({
     return new Date(dateString).toLocaleDateString();
   };
 
+  // Format currency based on claim's currency
+  const formatCurrency = (amount: number, currency: string) => {
+    return new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency,
+    }).format(amount);
+  };
+
   const handleApprove = async (claimId: string) => {
     setIsLoading((prev) => ({ ...prev, [claimId]: true }));
     try {
@@ -123,7 +131,7 @@ export default function PendingClaimsReview({
   };
 
   return (
-    <Card className="w-full">
+    <Card className="w-full border-2 border-gray-200 border-solid">
       <CardHeader>
         <CardTitle>Claims Pending Review</CardTitle>
       </CardHeader>
@@ -148,7 +156,9 @@ export default function PendingClaimsReview({
                   <TableCell className="font-medium">{claim.title}</TableCell>
                   <TableCell>{claim.employeeName || "Unknown"}</TableCell>
                   <TableCell>{formatDate(claim.lastUpdated)}</TableCell>
-                  <TableCell>${claim.amount.toFixed(2)}</TableCell>
+                  <TableCell>
+                    {formatCurrency(claim.amount, claim.currency || "GBP")}
+                  </TableCell>
                   <TableCell>
                     <span
                       className={`px-2 py-1 rounded-full text-xs ${

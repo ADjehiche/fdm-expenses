@@ -34,6 +34,14 @@ export default function ReimburseClaimsReview({
     return new Date(dateString).toLocaleDateString();
   };
 
+  // Format currency based on claim's currency
+  const formatCurrency = (amount: number, currency: string) => {
+    return new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency,
+    }).format(amount);
+  };
+
   const handleReimburse = async (claimId: string) => {
     setSubmitting(claimId);
     setIsLoading((prev) => ({ ...prev, [claimId]: true }));
@@ -96,7 +104,9 @@ export default function ReimburseClaimsReview({
                   <TableCell className="font-medium">{claim.title}</TableCell>
                   <TableCell>{claim.employeeId}</TableCell>
                   <TableCell>{formatDate(claim.lastUpdated)}</TableCell>
-                  <TableCell>${claim.amount.toFixed(2)}</TableCell>
+                  <TableCell>
+                    {formatCurrency(claim.amount, claim.currency || "GBP")}
+                  </TableCell>
                   <TableCell>
                     <span
                       className={`px-2 py-1 rounded-full text-xs ${
