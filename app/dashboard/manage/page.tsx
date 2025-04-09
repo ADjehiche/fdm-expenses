@@ -51,7 +51,14 @@ export default async function ManagePage() {
   // Get claims submitted by employees for review
   const claims = await getSubmittedClaims(user);
 
-  // Convert the claims to SerializedClaim format expected by the component
+  // Fetch employee names for each claim
+  const employeeNames = await Promise.all(
+    claims.map(async (claim) => {
+      const employee = await db.getEmployeeId(claim.getEmployeeId());
+      return employee ? employee.getFirstName() + " " + employee.getFamilyName() : "Unknown Employee";
+    })
+  );
+
   const serializedClaims: SerializedClaim[] = await Promise.all(
     claims.map(async (claim) => {
       // Fetch employee details to get the name

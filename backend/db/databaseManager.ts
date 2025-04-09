@@ -1116,6 +1116,19 @@ export class DatabaseManager {
 
         return users;
     }
+
+      async getEmployeeId(id : Number) : Promise<User> {
+        const users = await this.getAllAccounts()
+        const user = users.find((user) => user.getId() == id);
+
+        if (!user) {
+            throw new Error(`User with ID ${id} not found`);
+        }
+
+        return user;
+
+      }
+
   /**
    * Handles deleting a claim from the database.
    *

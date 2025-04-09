@@ -48,6 +48,18 @@ export interface SerializedClaim {
   feedback: string;
 }
 
+export interface SerializedUser {
+  id: string;
+  firstName: string;
+  familyName: string;
+  fullName: string;
+  email: string;
+  employeeClassification: string;
+  region: string;
+  employeeRoleType: string;
+  createdAt: string;
+}
+
 export interface ExpenseClaim {
   id: string;
   userId: string;
