@@ -9,7 +9,7 @@ import ReimburseClaimsReview from "./ReimburseClaimsReview";
 import { redirect } from "next/navigation";
 import { User } from "@/backend/user";
 import { DatabaseManager } from "@/backend/db/databaseManager";
-import { EmployeeType } from "@/backend/employee/employeeRole";
+import { EmployeeType } from "@/backend/employee/utils";
 import { SerializedClaim } from "@/backend/serializedTypes";
 
 // Create properly marked server actions for passing to client components

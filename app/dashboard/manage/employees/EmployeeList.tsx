@@ -16,7 +16,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { SerializedUser } from "@/lib/types";
 import { toast } from "@/components/ui/use-toast";
 
-
 interface PendingClaimsReviewProps {
   employees: SerializedUser[];
   approveClaimAction: (id: string) => Promise<boolean>;
@@ -61,8 +60,12 @@ export default function PendingClaimsReview({
               {employees.map((employee) => (
                 <TableRow key={employee.id}>
                   <TableCell className="font-medium">{employee.id}</TableCell>
-                  <TableCell className="font-medium">{employee.firstName}</TableCell>
-                  <TableCell className="font-medium">{employee.familyName}</TableCell>
+                  <TableCell className="font-medium">
+                    {employee.firstName}
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {employee.familyName}
+                  </TableCell>
                   <TableCell>{employee.email}</TableCell>
                   <TableCell>{employee.employeeClassification}</TableCell>
                   <TableCell>{employee.region}</TableCell>

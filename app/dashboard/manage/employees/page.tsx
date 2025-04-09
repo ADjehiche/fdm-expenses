@@ -10,8 +10,12 @@ import EmployeeList from "./EmployeeList";
 import { redirect } from "next/navigation";
 import { User } from "@/backend/user";
 import { DatabaseManager } from "@/backend/db/databaseManager";
-import { EmployeeType } from "@/backend/employee/employeeRole";
-import { SerializedClaim, SerializedUser, serializeUser } from "@/backend/serializedTypes";
+import { EmployeeType } from "@/backend/employee/utils";
+import {
+  SerializedClaim,
+  SerializedUser,
+  serializeUser,
+} from "@/backend/serializedTypes";
 
 // Create properly marked server actions for passing to client components
 async function approveAction(id: string) {
@@ -54,7 +58,9 @@ export default async function ManagePage() {
   // Fetch employee names for each claim
   const employees = await db.getAllAccounts();
 
-  const serializedEmployees: SerializedUser[] = employees.map((employee, index) => (serializeUser(employee)));
+  const serializedEmployees: SerializedUser[] = employees.map(
+    (employee, index) => serializeUser(employee)
+  );
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Employees you manage</h1>

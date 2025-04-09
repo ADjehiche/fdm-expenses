@@ -3,7 +3,7 @@
 import { adminAPIHandler } from "@/actions/admin-api";
 import { Administrator } from "../../../../../backend/employee/administrator";
 import { EmployeeClassification } from "../../../../../backend/user";
-import { EmployeeType } from "../../../../../backend/employee/employeeRole";
+import { EmployeeType } from "../../../../../backend/employee/utils";
 import { DatabaseManager } from "../../../../../backend/db/databaseManager";
 import { usersTable } from "../../../../../backend/db/schema";
 import { eq } from "drizzle-orm";

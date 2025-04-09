@@ -1,19 +1,22 @@
 import { eq, and, or, not } from "drizzle-orm";
-import { EmployeeClassification, matchUserEmail, matchUserName, User } from "../user";
+import {
+  EmployeeClassification,
+  matchUserEmail,
+  matchUserName,
+  User,
+} from "../user";
 import { db } from "./drizzle";
 import { claimsTable, lineManagersTable, usersTable } from "./schema";
-import { GeneralStaff } from "../employee/generalStaff";
 import { Claim, ClaimStatus } from "../claims/claim";
-import { EmployeeRole, EmployeeType } from "../employee/employeeRole";
-import { LineManager } from "../employee/lineManager";
-import { Administrator } from "../employee/administrator";
-import { PayrollOfficer } from "../employee/payrollOfficer";
-import { Consultant } from "../employee/consultant";
+import { EmployeeType } from "../employee/utils";
 import bcrypt from "bcryptjs";
 import fs from "fs";
 
+// Forward declaration of the EmployeeRole interface
+import type { EmployeeRole } from "../employee/employeeRole";
+
 /**
- * Used to represent the database as a phyiscial class. 
+ * Used to represent the database as a physical class.
  */
 export class DatabaseManager {
   static #instance: DatabaseManager;
@@ -223,6 +226,14 @@ export class DatabaseManager {
     employeeType: EmployeeType
   ): Promise<EmployeeRole | null> {
     let employeeRole: EmployeeRole | null = null;
+
+    // Dynamically import the required classes to avoid circular dependencies
+    const { LineManager } = await import("../employee/lineManager");
+    const { Administrator } = await import("../employee/administrator");
+    const { GeneralStaff } = await import("../employee/generalStaff");
+    const { PayrollOfficer } = await import("../employee/payrollOfficer");
+    const { Consultant } = await import("../employee/consultant");
+
     switch (employeeType) {
       case EmployeeType.LineManager:
         const employees = await this.getManagersEmployees(userId);
@@ -1083,51 +1094,49 @@ export class DatabaseManager {
     }
   }
 
+  /**
+   * This function searches for subsections of the search string across the user database, and sorts them on length of match.
+   *
+   * EG: getUsersByName("smith") will return names:
+   *  smith
+   *  smeagol
+   *  sarah
+   *
+   * @param searchString search parameter names get compared against users first and family name
+   * @returns An ordered array, lower index means User's name matches well with search parameter.
+   */
+  async getUsersByName(searchString: string): Promise<User[]> {
+    const users = await this.getAllAccounts();
 
-    /**
-     * This function searches for subsections of the search string across the user database, and sorts them on length of match. 
-     * 
-     * EG: getUsersByName("smith") will return names:
-     *  smith
-     *  smeagol
-     *  sarah
-     * 
-     * @param searchString search parameter names get compared against users first and family name
-     * @returns An ordered array, lower index means User's name matches well with search parameter. 
-     */
-    async getUsersByName(searchString: string) : Promise<User[]> {
-        const users = await this.getAllAccounts()
+    // sort by rank from name
+    users.sort((a, b) => {
+      return matchUserName(a, searchString) - matchUserName(b, searchString);
+    });
 
-        // sort by rank from name 
-        users.sort((a, b) => {
-            return matchUserName(a, searchString) - matchUserName(b, searchString);
-        })
+    return users;
+  }
 
-        return users;
+  async getUsersByEmail(searchString: string): Promise<User[]> {
+    const users = await this.getAllAccounts();
+
+    // sort by rank from name
+    users.sort((a, b) => {
+      return matchUserEmail(a, searchString) - matchUserEmail(b, searchString);
+    });
+
+    return users;
+  }
+
+  async getEmployeeId(id: Number): Promise<User> {
+    const users = await this.getAllAccounts();
+    const user = users.find((user) => user.getId() == id);
+
+    if (!user) {
+      throw new Error(`User with ID ${id} not found`);
     }
 
-    async getUsersByEmail(searchString: string)  : Promise<User[]> {
-        const users = await this.getAllAccounts()
-
-        // sort by rank from name 
-        users.sort((a, b) => {
-            return matchUserEmail(a, searchString) - matchUserEmail(b, searchString);
-        })
-
-        return users;
-    }
-
-      async getEmployeeId(id : Number) : Promise<User> {
-        const users = await this.getAllAccounts()
-        const user = users.find((user) => user.getId() == id);
-
-        if (!user) {
-            throw new Error(`User with ID ${id} not found`);
-        }
-
-        return user;
-
-      }
+    return user;
+  }
 
   /**
    * Handles deleting a claim from the database.
