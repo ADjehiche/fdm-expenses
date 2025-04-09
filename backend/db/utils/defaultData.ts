@@ -47,6 +47,10 @@ async function InsertDefaultData() {
 
   // Create a reimbursed claim
   await createReimbusedClaim(general, "Travel Costs for Work Sanctioned Conference Trip", 1000, lineManager, payrollOfficer);
+
+  await createPendingClaim(consultant, "Buy Adobe", 10000000000000);
+  await createApprovedClaim(consultant, "Lunch Break", 10, lineManager);
+  await createApprovedClaim(consultant, "Breakfast", 5, lineManager);
 }
 
 InsertDefaultData();

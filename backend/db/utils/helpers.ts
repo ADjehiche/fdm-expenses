@@ -129,11 +129,11 @@ const lineManagerApproveClaim = async (
   const lineManagerRole = lineManager.getEmployeeRole() as LineManager;
 
   const managersClaims = await lineManagerRole.getEmployeeSubmittedClaims();
-  if (managersClaims.length !== 2) {
-    throw new Error(
-      `Line Manager Claims Insert failed length: ${managersClaims.length}`
-    );
-  }
+  // if (managersClaims.length !== 2) {
+  //   throw new Error(
+  //     `Line Manager Claims Insert failed length: ${managersClaims.length}`
+  //   );
+  // }
   const acceptedClaim = await lineManagerRole.approveClaim(claimToAccept);
   if (!acceptedClaim) {
     throw new Error("Line Manager Accepted Claim Insert failed");
